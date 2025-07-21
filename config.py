@@ -3,8 +3,8 @@ GRAPHICS_CONFIG = {
     "line_width": 2.5,
     "colors": {
         "background": "#111111",         # Deep charcoal
-        "left_axis": "#4FC3F7",          # Bright sky blue
-        "right_axis": "#FF8A65",         # Warm coral
+        "left": "#4FC3F7",               # Bright sky blue (used for left axis / lines)
+        "right": "#FF8A65",              # Warm coral (used for right axis / lines)
         "title": "#FFFFFF",              # White title text
         "subtitle": "#CCCCCC",           # Light grey subtitle
         "annotation": "#DDDDDD",         # Slightly muted for readability

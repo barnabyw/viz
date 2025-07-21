@@ -5,25 +5,28 @@ from scipy.optimize import curve_fit
 from matplotlib.animation import FuncAnimation
 from config import GRAPHICS_CONFIG
 
-plt.style.use('dark_background')
-
+plt.style.use('dark_background')  # Set dark background globally
 
 class Series:
     def __init__(self, df, y_col, x_col="year"):
         self.name = y_col
         self.data = df[[x_col, y_col]].dropna().to_numpy()
-        self.exp_func = None
+        self.x_col = x_col
+        self.y_col = y_col
         self.params = None
+        self.exp_func = None
 
     def fit_exponential(self, start_year, end_year):
         mask = (self.data[:, 0] >= start_year) & (self.data[:, 0] <= end_year)
-        x_data, y_data = self.data[mask][:, 0], self.data[mask][:, 1]
+        x_data = self.data[mask][:, 0]
+        y_data = self.data[mask][:, 1]
         x0 = x_data[0]
 
-        def exp_func(x, a, b): return a * np.exp(b * (x - x0))
+        def exp_func(x, a, b):
+            return a * np.exp(b * (x - x0))
+
         self.params, _ = curve_fit(exp_func, x_data, y_data, maxfev=10000)
         self.exp_func = exp_func
-
 
 class Plotter:
     def __init__(self, title="", subtitle="", ylabel="", start_year=None, end_year=None):
@@ -31,149 +34,158 @@ class Plotter:
         self.subtitle = subtitle
         self.ylabel = ylabel
         self.series_list = []
-        self.start_year = start_year
-        self.end_year = end_year
+        self.global_start_year = start_year
+        self.global_end_year = end_year
 
+    # Removed axis parameter here
     def add_series(self, series, start_year=None, end_year=None, color=None):
         self.series_list.append({
             'series': series,
-            'start_year': start_year or self.start_year,
-            'end_year': end_year or self.end_year,
+            'start_year': start_year,
+            'end_year': end_year,
             'color': color
         })
 
-    def _setup_axes(self, animated=False):
-        figsize = GRAPHICS_CONFIG["figsize"] if animated else (20, 7.5)
-        fig, ax = plt.subplots(figsize=figsize)
-        if animated:
-            ax.set_facecolor(GRAPHICS_CONFIG["colors"]["background"])
-        return fig, ax
+    def plot(self, font = 'Bahnschrift'):
+        plt.style.use('dark_background')
+        fig, ax = plt.subplots(figsize=(20, 7.5))
 
-    def _style_axes(self, fig, ax, animated=False, font='Bahnschrift'):
-        for spine in ['left', 'right', 'top']:
-            ax.spines[spine].set_visible(False)
-
-        ax.set_xlabel("Year")
-        if not animated:
-            ax.grid(axis='y', alpha=0.3)
-            ax.grid(axis='x', visible=False)
-
-            # Title block
-            plt.text(0.125, 0.90, self.title, fontname=font, fontsize=20, ha='left', transform=fig.transFigure)
-            plt.text(0.125, 0.86, self.subtitle, fontname=font, fontsize=16, ha='left', transform=fig.transFigure)
-            fig.add_artist(plt.Line2D([0.1, 0.9], [0.87, 0.87], transform=fig.transFigure, clip_on=False, color='white', linewidth=1.5))
-            plt.text(0.125, 0.82, self.ylabel, fontname=font, fontsize=14, ha='left', transform=fig.transFigure, color='#66c2ff')
-            plt.text(0.1, 0.05, "Source: Example Data", fontname=font, fontstyle='italic', fontsize=12, ha='left', transform=fig.transFigure)
-            plt.subplots_adjust(top=0.8)
-        return '#66c2ff'
-
-    def plot(self, font='Bahnschrift'):
-        fig, ax = self._setup_axes(animated=False)
-        default_color = self._style_axes(fig, ax, animated=False, font=font)
+        default_color = '#66c2ff'
 
         for entry in self.series_list:
             series = entry['series']
+            start_year = entry['start_year'] or self.global_start_year
+            end_year = entry['end_year'] or self.global_end_year
             color = entry['color'] or default_color
-            x, y = series.data[:, 0], series.data[:, 1]
-            ax.plot(x, y, 'o-', label=series.name, color=color, markerfacecolor=color)
 
-            if series.exp_func:
-                x_proj = np.linspace(entry['start_year'], entry['end_year'], 100)
+            x_real = series.data[:, 0]
+            y_real = series.data[:, 1]
+
+            ax.plot(x_real, y_real, 'o-', label=f'{series.name}', color=color, markerfacecolor=color)
+
+            if series.exp_func and series.params is not None:
+                x_proj = np.linspace(start_year, end_year, 100)
                 y_proj = series.exp_func(x_proj, *series.params)
                 ax.plot(x_proj, y_proj, '--', color=color)
 
-            ax.annotate(series.name, xy=(x[-1], y[-1]), xytext=(5, -4), textcoords='offset points', fontsize=13, color=color)
+            # Annotate last point
+            ax.annotate(
+                text=series.name,
+                xy=(x_real[-1], y_real[-1]),
+                textcoords='offset points',
+                xytext=(5, -4),
+                fontsize=13,
+                color=color
+            )
 
+        # Remove y-axis label and spines for clean look
+        ax.set_ylabel(self.ylabel)
+        for spine in ['right', 'top']:
+            ax.spines[spine].set_visible(False)
+
+        # Only horizontal grid lines
+        ax.grid(axis='y', alpha=0.3)
+        ax.grid(axis='x', visible=False)
+
+        # Axis labels
+        ax.set_xlabel("Year")
+
+        # Title and subtitle
+        plt.text(0.125, 0.90, self.title, fontname=font, fontsize=20, ha='left', transform=fig.transFigure)
+        plt.text(0.125, 0.86, self.subtitle, fontname=font, fontsize=16, ha='left', transform=fig.transFigure)
+
+        fig.add_artist(plt.Line2D(
+            [0.1, 0.9], [0.87, 0.87],
+            transform=fig.transFigure,
+            clip_on=False,
+            color='white',
+            linewidth=1.5
+        ))
+
+        # Footnote
+        plt.text(0.1, 0.05, "Source: Example Data", fontname=font, fontstyle='italic',
+                 fontsize=12, ha='left', transform=fig.transFigure)
+
+        plt.subplots_adjust(top=0.8, wspace=0.3)
         plt.show()
 
-    def animate_to_log(self, series_names=None, font='Bahnschrift'):
-        fig, ax = self._setup_axes(animated=True)
-        default_color = self._style_axes(fig, ax, animated=True, font=font)
+def animate_to_log(plotter, series_obj):
+    config = GRAPHICS_CONFIG
+    fig, ax = plt.subplots(figsize=config["figsize"])
+    ax.set_facecolor(config["colors"]["background"])
+    # Extract and trim data
+    x = series_obj.data[:, 0]
+    y = series_obj.data[:, 1]
+    # Use start/end year from plotter or series entry
+    start_year = plotter.global_start_year or x.min()
+    end_year = plotter.global_end_year or x.max()
+    mask = (x >= start_year) & (x <= end_year)
+    x, y = x[mask], y[mask]
+    # Plot line
+    (line,) = ax.plot(x, y, 'o-', color=config["colors"]['left'], lw=config["line_width"],
+                      markerfacecolor=config["colors"]['left'])
+    # Log ticks
+    log_ticks = np.array(config["log_ticks"])
+    log_tick_labels = [str(t) for t in log_ticks]
+    ax.set_yticks(log_ticks)
+    ax.set_yticklabels(log_tick_labels)
+    ax.grid(True, axis='y', which='major', linestyle='--', alpha=0.4)
+    ax.set_xlabel(series_obj.x_col, fontsize=14)
+    ax.set_xlim(x.min(), x.max())
+    ax.set_ylim(y.min(), y.max())
+    # Precomputed eased time steps
+    frames = config["animation"]["frames"]
+    duration_ms = config["animation"]["duration_ms"]
+    ease = config["animation"]["easing"]
+    t_values = [ease(i / (frames - 1)) for i in range(frames)]
+    t_values = (np.array(t_values) - min(t_values)) / (max(t_values) - min(t_values))
 
-        entries = [e for e in self.series_list if
-                   (series_names is None or
-                    (isinstance(series_names, str) and e['series'].name == series_names) or
-                    (isinstance(series_names, list) and e['series'].name in series_names))]
+    def log_interp(y_vals, t):
+        return (1 - t) * y_vals + t * np.log10(y_vals)
 
-        if not entries:
-            raise ValueError("No matching series found for animation.")
+    def animate(i):
+        t = t_values[i]
+        y_interp = log_interp(y, t)
+        line.set_ydata(y_interp)
+        tick_interp = log_interp(log_ticks, t)
+        ax.set_yticks(tick_interp)
+        ax.set_yticklabels(log_tick_labels)
+        ax.set_ylim(y_interp.min(), y_interp.max())
+        return line,
 
-        animation_data, all_y_values = [], []
-        for entry in entries:
-            s, color = entry['series'], entry['color'] or default_color
-            x, y = s.data[:, 0], s.data[:, 1]
-            mask = (x >= entry['start_year']) & (x <= entry['end_year'])
-            x, y = x[mask], y[mask]
-            line, = ax.plot(x, y, 'o-', lw=GRAPHICS_CONFIG["line_width"], color=color, markerfacecolor=color)
-
-            proj_line, y_proj = None, None
-            if s.exp_func:
-                x_proj = np.linspace(entry['start_year'], entry['end_year'], 100)
-                y_proj = s.exp_func(x_proj, *s.params)
-                proj_line, = ax.plot(x_proj, y_proj, '--', color=color)
-
-            animation_data.append({'line': line, 'proj_line': proj_line, 'x': x, 'y': y,
-                                   'x_proj': x_proj if s.exp_func else None, 'y_proj': y_proj})
-            all_y_values.extend(y)
-            if y_proj is not None:
-                all_y_values.extend(y_proj)
-
-        log_ticks = np.array(GRAPHICS_CONFIG["log_ticks"])
+    def finalize_log_scale():
+        ax.set_yscale('log')
+        line.set_ydata(y)
         ax.set_yticks(log_ticks)
-        ax.set_yticklabels([str(t) for t in log_ticks])
-        ax.set_xlim(min(np.concatenate([d['x'] for d in animation_data])), max(np.concatenate([d['x'] for d in animation_data])))
+        ax.set_yticklabels(log_tick_labels)
+        ax.set_ylim(y.min(), y.max())
+        fig.canvas.draw_idle()
 
-        frames = GRAPHICS_CONFIG["animation"]["frames"]
-        duration_ms = GRAPHICS_CONFIG["animation"]["duration_ms"]
-        ease = GRAPHICS_CONFIG["animation"]["easing"]
-        t_values = np.array([ease(i / (frames - 1)) for i in range(frames)])
-        t_values = (t_values - t_values.min()) / (t_values.max() - t_values.min())
+    anim = FuncAnimation(fig, animate, frames=frames,
+                         interval=duration_ms / frames, blit=False, repeat=False)
 
-        def log_interp(y_vals, t): return (1 - t) * y_vals + t * np.log10(y_vals)
+    def on_animation_end(*args):
+        finalize_log_scale()
 
-        def animate(i):
-            t = t_values[i]
-            ax.set_yticks(log_interp(log_ticks, t))
-            ax.set_yticklabels([str(tick) for tick in log_ticks])
+    anim._stop = lambda: (FuncAnimation._stop(anim), on_animation_end())[0]
 
-            all_current_y = []
-            for data in animation_data:
-                y_i = log_interp(data['y'], t)
-                data['line'].set_ydata(y_i)
-                all_current_y.extend(y_i)
-                if data['proj_line']:
-                    y_proj_i = log_interp(data['y_proj'], t)
-                    data['proj_line'].set_ydata(y_proj_i)
-                    all_current_y.extend(y_proj_i)
-
-            if all_current_y:
-                ax.set_ylim(min(all_current_y), max(all_current_y))
-
-            return [d['line'] for d in animation_data] + [d['proj_line'] for d in animation_data if d['proj_line']]
-
-        def finalize_log_scale():
-            ax.set_yscale('log')
-            ax.set_yticks(log_ticks)
-            ax.set_yticklabels([str(t) for t in log_ticks])
-            if all_y_values:
-                ax.set_ylim(min(all_y_values), max(all_y_values))
-            fig.canvas.draw_idle()
-
-        anim = FuncAnimation(fig, animate, frames=frames, interval=duration_ms / frames, blit=False, repeat=False)
-        anim._stop = lambda: (FuncAnimation._stop(anim), finalize_log_scale())[0]
-
-        plt.tight_layout()
-        plt.show()
-        return anim
-
+    plt.tight_layout()
+    plt.show()
 
 # === MAIN SCRIPT ===
+
+# 1. Load the data
 data_path = r"C:\Users\barna\downloads\\"
 file_name = "solars mad one.csv"
 df = pd.read_csv(data_path + file_name)
 
+# Create Series objects
 solar = Series(df, "generation_twh")
+demand = Series(df, "global demand")
+
+# Fit exponential curves
 solar.fit_exponential(2015, 2030)
+demand.fit_exponential(2005, 2015)
 
 plotter = Plotter(
     title="Solar Generation vs Global Demand",
@@ -182,6 +194,10 @@ plotter = Plotter(
     end_year=2030
 )
 
-plotter.add_series(solar)
-# plotter.plot()  # Static
-plotter.animate_to_log("generation_twh")  # Animated log
+plotter.add_series(solar, start_year=2010, end_year=2030)
+
+# Plot everything
+# plotter.plot()
+
+# Animate
+animate_to_log(plotter, solar)
