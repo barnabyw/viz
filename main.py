@@ -119,7 +119,7 @@ class AnimatedPlotter:
 
         # Animation easing function
         def ease_in_out_cubic(t):
-            return 3 * t ** 3 - 2 * t ** 3
+            return 3 * t ** 2 - 2 * t ** 3
 
         # Precompute eased time values
         t_values = [ease_in_out_cubic(i / (frames - 1)) for i in range(frames)]
@@ -213,8 +213,8 @@ if __name__ == "__main__":
 
     # Create plotter
     plotter = AnimatedPlotter(
-        title="Solar Generation vs Global Demand",
-        subtitle="Animated transition to logarithmic scale",
+        title= "Solar growth",
+        subtitle="GW global capacity",
         start_year=2010,
         end_year=2035
     )
