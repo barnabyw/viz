@@ -48,6 +48,7 @@ class AnimatedPlotter:
 
     def animate_plot(self, font='Bahnschrift', frames=60, duration_ms=2000):
         fig, ax = plt.subplots(figsize=(20, 7.5))
+        ax.set_position([0.15, 0.15, 0.6, 0.7])
 
         # Store all plot elements for animation
         lines = []
@@ -103,10 +104,11 @@ class AnimatedPlotter:
         ax.grid(axis='x', visible=False)
 
         # Title and subtitle
-        plt.text(0.125, 0.90, self.title, fontname=font, fontsize=20,
-                 ha='left', transform=fig.transFigure)
-        plt.text(0.125, 0.86, self.subtitle, fontname=font, fontsize=16,
-                 ha='left', transform=fig.transFigure)
+        # NEW CODE:
+        plt.text(0, 1.15, self.title, fontname=font, fontsize=20,
+                 ha='left', transform=ax.transAxes)
+        plt.text(0, 1.10, self.subtitle, fontname=font, fontsize=16,
+                 ha='left', transform=ax.transAxes)
 
         # Set initial limits including projections
         all_y = np.concatenate([y for _, _, y in lines])
@@ -184,8 +186,8 @@ class AnimatedPlotter:
         anim = FuncAnimation(fig, animate, frames=frames,
                              interval=duration_ms / frames, blit=False, repeat=False)
 
-        plt.subplots_adjust(top=0.8, left=0.125, right=0.9)
-        plt.tight_layout()
+        #plt.subplots_adjust(top=0.8, left=0.125, right=0.9)
+        #plt.tight_layout()
         plt.show()
 
         # Auto-finalize after animation
@@ -201,27 +203,27 @@ class AnimatedPlotter:
 if __name__ == "__main__":
     # Load data (replace with your actual path)
     data_path = r"C:\Users\barna\downloads\\"
-    file_name = "solars mad one.csv"
+    file_name = "solar5.csv"
     df = pd.read_csv(data_path + file_name)
 
     # Create series
     solar = Series(df, "generation_twh")
-    demand = Series(df, "global demand")
 
     # Fit exponential curves
     solar.fit_exponential(2015, 2030)
-    demand.fit_exponential(2005, 2015)
 
     # Create plotter
     plotter = AnimatedPlotter(
         title="Solar Generation vs Global Demand",
         subtitle="Animated transition to logarithmic scale",
         start_year=2010,
-        end_year=2030
+        end_year=2035
     )
 
     # Add series (you can add both if needed)
     plotter.add_series(solar, color='#66c2ff')
+    bloomberg_solar = Series(df, "bloomberg")
+    plotter.add_series(bloomberg_solar, start_year=2022, end_year=2030, color='#ff4444')
     # plotter.add_series(demand, color='#ff6b6b')
 
     # Run animated plot
