@@ -104,7 +104,6 @@ class AnimatedPlotter:
         ax.grid(axis='x', visible=False)
 
         # Title and subtitle
-        # NEW CODE:
         plt.text(0, 1.15, self.title, fontname=font, fontsize=20,
                  ha='left', transform=ax.transAxes)
         plt.text(0, 1.10, self.subtitle, fontname=font, fontsize=16,
@@ -120,7 +119,7 @@ class AnimatedPlotter:
 
         # Animation easing function
         def ease_in_out_cubic(t):
-            return 3 * t ** 2 - 2 * t ** 3
+            return 3 * t ** 3 - 2 * t ** 3
 
         # Precompute eased time values
         t_values = [ease_in_out_cubic(i / (frames - 1)) for i in range(frames)]
