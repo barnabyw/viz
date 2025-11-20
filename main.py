@@ -46,7 +46,7 @@ class AnimatedPlotter:
             'color': color or '#66c2ff'
         })
 
-    def animate_plot(self, font='Bahnschrift', frames=60, duration_ms=2000):
+    def animate_plot(self, font='Bahnschrift ', frames=60, duration_ms=2000):
         fig, ax = plt.subplots(figsize=(20, 7.5))
         ax.set_position([0.15, 0.15, 0.6, 0.7])
 
