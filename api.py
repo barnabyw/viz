@@ -4,38 +4,38 @@ from matplotlib.animation import FuncAnimation
 
 
 # -------------------------------------------------------------
-# 1. PREP — Compute week-average stacked dataframe for a day
+# 1. PREP — Compute 3-month average stacked dataframe
 # -------------------------------------------------------------
-def make_week_avg_stack(df, day):
+def make_three_month_avg_stack(df, start_month):
     """
-    Given a start day (string), compute the 7-day average profile,
-    averaged by time-of-day across the week.
+    Given a start month (e.g., "2021-04"), compute the 3-month average
+    profile (Apr, May, Jun), averaged by time-of-day.
     Returns: (stack_df, ordered_columns)
     """
-    start = pd.Timestamp(day)
-    end = start + pd.Timedelta(days=31)
+    start = pd.Timestamp(start_month)
+    end = start + pd.DateOffset(months=3)
 
-    week = df.loc[start:end].copy()
+    period = df.loc[start:end].copy()
 
     # split battery charge/discharge
-    week["Battery Discharge"] = week["Batteries"].clip(lower=0)
-    week["Battery Charge"] = (-week["Batteries"].clip(upper=0))
+    period["Battery Discharge"] = period["Batteries"].clip(lower=0)
+    period["Battery Charge"] = (-period["Batteries"].clip(upper=0))
 
     stack = pd.DataFrame({
-        "Nuclear": week["Nuclear"],
-        "Hydro": week["Small Hydro"] + week["Large Hydro"],
-        "Wind": week["Wind"],
-        "Solar": week["Solar"],
-        "Battery Discharge": week["Battery Discharge"],
-        "Battery Charge": week["Battery Charge"],
-        "Gas": week["Natural Gas"],
-        "Imports": week["Imports"],
+        "Nuclear": period["Nuclear"],
+        "Hydro": period["Small Hydro"] + period["Large Hydro"],
+        "Wind": period["Wind"],
+        "Solar": period["Solar"],
+        "Battery Discharge": period["Battery Discharge"],
+        "Battery Charge": period["Battery Charge"],
+        "Gas": period["Natural Gas"],
+        "Imports": period["Imports"],
     })
 
     # Resample to consistent 5-minute spacing
     stack = stack.resample("5min").mean().ffill()
 
-    # Average across the 7 days by time-of-day
+    # Average across all days by time-of-day
     stack = stack.groupby(stack.index.time).mean()
 
     # Recreate a datetime index (just for plotting)
@@ -72,42 +72,43 @@ def plot_stack(ax, stack, order, colors, title):
 
 
 # -------------------------------------------------------------
-# 3. ANIMATION — show one week average per frame
+# 3. ANIMATION — show Apr-May-Jun average per frame
 # -------------------------------------------------------------
-def animate_week_averages(df, days, colors, frames_per_week=30):
+def animate_seasonal_averages(df, start_months, colors, frames_per_period=60):
     """
-    For each date in 'days':
-      - compute 7-day average stack
-      - display it for `frames_per_week` frames
+    For each starting month in 'start_months':
+      - compute 3-month average stack (Apr-May-Jun)
+      - display it for `frames_per_period` frames
     """
     fig, ax = plt.subplots(figsize=(14, 6))
 
-    # Precompute all weeks
-    weeks = []
-    for d in days:
-        stack, order = make_week_avg_stack(df, d)
-        weeks.append((stack, order, d))
+    # Precompute all periods
+    periods = []
+    for month in start_months:
+        stack, order = make_three_month_avg_stack(df, month)
+        year = pd.Timestamp(month).year
+        periods.append((stack, order, year))
 
-    total_frames = len(weeks) * frames_per_week
+    total_frames = len(periods) * frames_per_period
 
     def update(frame_idx):
-        week_idx = frame_idx // frames_per_week  # which week to show
+        period_idx = frame_idx // frames_per_period  # which period to show
 
-        stack, order, d = weeks[week_idx]
+        stack, order, year = periods[period_idx]
 
         plot_stack(
             ax,
             stack,
             order,
             colors,
-            title=f"7-Day Average Starting {d}",
+            title=f"Apr-May-Jun {year} Average",
         )
 
     anim = FuncAnimation(
         fig,
         update,
         frames=total_frames,
-        interval=20,
+        interval=20,  # 4x faster (was 80)
         repeat=True
     )
 
@@ -137,15 +138,13 @@ if __name__ == "__main__":
         "Nuclear": "#B3E5FC",
     }
 
-    # Start date for each year
-    days = [
-        "2019-05-01",
-        "2020-05-01",
-        "2021-05-01",
-        "2022-05-01",
-        "2023-05-01",
-        "2024-05-01",
-        "2025-05-01",
+    # Start of Apr-May-Jun period for each year
+    start_months = [
+        "2021-04-01",
+        "2022-04-01",
+        "2023-04-01",
+        "2024-04-01",
+        "2025-04-01",
     ]
 
-    animate_week_averages(df, days, colors, frames_per_week=60)
+    animate_seasonal_averages(df, start_months, colors, frames_per_period=20)
