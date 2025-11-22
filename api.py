@@ -2,7 +2,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-
 # -------------------------------------------------------------
 # 1. PREP — Compute 3-month average stacked dataframe
 # -------------------------------------------------------------
@@ -42,9 +41,9 @@ def make_three_month_avg_stack(df, start_month):
     stack.index = pd.date_range(start, periods=len(stack), freq="5min")
 
     order = [
-        "Nuclear", "Hydro", "Wind", "Solar",
+        "Solar",
         "Battery Discharge", "Battery Charge",
-        "Gas", "Imports"
+        "Nuclear", "Gas", "Wind","Imports", "Hydro",
     ]
     return stack[order], order
 
