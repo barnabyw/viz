@@ -2,24 +2,27 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from matplotlib import font_manager
+
+# -------------------------------------------------------------
+# FONT SETUP (Montserrat)
+# -------------------------------------------------------------
+font_path = r"C:\Users\barna\AppData\Local\Microsoft\Windows\Fonts\Montserrat-VariableFont_wght.ttf"
+font_manager.fontManager.addfont(font_path)
+
+plt.rcParams['font.family'] = 'Montserrat'
 
 # =============================================================
 # 1. DATA PREPARATION
 # =============================================================
-
 def make_three_month_avg_stack(df, start_month):
-    """
-    Compute 3-month average dispatch profile averaged by time-of-day.
-    Returns (stack_df, ordered_cols).
-    """
     start = pd.Timestamp(start_month)
     end = start + pd.DateOffset(months=3)
 
     period = df.loc[start:end].copy()
 
-    # Split battery charge/discharge
     period["Battery Discharge"] = period["Batteries"].clip(lower=0)
-    period["Battery Charge"] = 0 #(-period["Batteries"].clip(upper=0))
+    period["Battery Charge"] = 0
 
     stack = pd.DataFrame({
         "Nuclear": period["Nuclear"],
@@ -32,142 +35,132 @@ def make_three_month_avg_stack(df, start_month):
         "Gas": period["Natural Gas"],
     })
 
-    # Ensure 5-minute spacing
     stack = stack.resample("5min").mean().ffill()
-
-    # Average each time-of-day over all days
     stack = stack.groupby(stack.index.time).mean()
-
-    # Recreate datetime index for plotting
     stack.index = pd.date_range(start, periods=len(stack), freq="5min")
 
-    order = [
-        "Nuclear", "Wind", "Solar",
-        "Battery Discharge", "Battery Charge",  "Imports", "Hydro", "Gas"
-    ]
+    order = ["Nuclear", "Wind", "Solar",
+             "Battery Discharge", "Battery Charge",
+             "Imports", "Hydro", "Gas"]
 
     return stack[order], order
 
 
 def interpolate_stacks(stack_a, stack_b, n_steps):
-    """
-    Generate n_steps interpolated stacks between stack_a → stack_b,
-    ignoring index alignment issues by working on the underlying arrays.
-    """
-    # Make sure columns are in the same order
     if not stack_a.columns.equals(stack_b.columns):
         stack_b = stack_b[stack_a.columns]
-
-    # They *should* have the same shape because of your pipeline,
-    # but it's good to be defensive:
-    assert stack_a.shape == stack_b.shape, "Stacks must have same shape for interpolation"
 
     values_a = stack_a.to_numpy()
     values_b = stack_b.to_numpy()
 
     frames = []
     for i in range(1, n_steps + 1):
-        alpha = i / (n_steps + 1)   # 0 < alpha < 1 for pure intermediates
+        alpha = i / (n_steps + 1)
         interp_vals = (1 - alpha) * values_a + alpha * values_b
-
-        interp_df = pd.DataFrame(
-            interp_vals,
-            index=stack_a.index,      # reuse one consistent index
-            columns=stack_a.columns,
-        )
-        frames.append(interp_df)
+        frames.append(pd.DataFrame(interp_vals, index=stack_a.index, columns=stack_a.columns))
 
     return frames
 
 
-
-def build_sequence_of_frames(periods, transition_frames):
-    """
-    Given [(stack_year1, order, year), (stack_year2,...), ...]
-    Create the full ordered list of frames including:
-    - each yearly stack
-    - smooth transitions to the next year
-    """
+def build_sequence_of_frames(periods, transition_frames, pause_frames):
     all_frames = []
     titles = []
 
     for i, (stack, order, year) in enumerate(periods):
-        # Always include the start-of-year frame
-        all_frames.append(stack)
-        titles.append(f"{year}")
 
-        # If not the last period, interpolate to next
+        for _ in range(pause_frames):
+            all_frames.append(stack)
+            titles.append(f"{year}")
+
         if i < len(periods) - 1:
-            next_stack, _, next_year = periods[i+1]
-
-            intermediates = interpolate_stacks(
-                stack, next_stack, n_steps=transition_frames
-            )
+            next_stack, _, _ = periods[i + 1]
+            intermediates = interpolate_stacks(stack, next_stack, n_steps=transition_frames)
 
             for frame in intermediates:
-                # Title shows fractional movement toward next year
-                titles.append(f"{year}")
                 all_frames.append(frame)
+                titles.append(f"{year}")
 
     return all_frames, titles, order
 
 
 # =============================================================
-# 2. PLOTTING — Chart design in ONE place
+# 2. CHART DESIGN
 # =============================================================
-
 def plot_stack(ax, stack, order, colors, title):
+
     ax.clear()
 
+    # Convert MW → GW
+    stack_gw = stack / 1000.0
+
+    # Stackplot
     ax.stackplot(
-        stack.index,
-        [stack[col] for col in order],
+        stack_gw.index,
+        [stack_gw[col] for col in order],
         colors=[colors[c] for c in order],
         alpha=0.95,
     )
 
-    ax.set_title(title, fontsize=18, weight="bold")
-    ax.set_ylabel("MW")
-    ax.set_xlabel("")
+    # TITLE
+    ax.set_title(title, fontsize=20, weight="bold", color="#333333")
 
-    # Clean look
+    # ---- Y-AXIS ----
+    total = stack_gw.sum(axis=1)
+    ymax = total.max()
+    ax.set_ylim(0, ymax * 1.05)
+
+    ticks = ax.get_yticks()
+    ax.set_yticks(ticks)
+    ax.set_yticklabels([f"{t:g} GW" for t in ticks], color="#777777")
+
+    # ---- X-AXIS ----
+    desired = ["06:00", "12:00", "18:00"]
+    tick_positions = [t for t in stack_gw.index if t.strftime("%H:%M") in desired]
+    ax.set_xticks(tick_positions)
+    ax.set_xticklabels(["6 AM", "12 PM", "6 PM"], color="#777777")
+
+    # SOFT STYLING
+    for spine in ["left", "bottom"]:
+        ax.spines[spine].set_color("#AAAAAA")
+        ax.spines[spine].set_linewidth(1)
+
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
-    ax.grid(alpha=0.2)
+
+    ax.grid(color="#E5E5E5", linewidth=0.8, alpha=0.25)
+    ax.set_facecolor("#FAFAFA")
+    ax.margins(x=0)
+
+    # --- FIXED: SQUARE SHAPE (placed last so autoscaling works) ---
+    ax.set_box_aspect(1)      # <--- THIS MUST BE LAST
 
 
 # =============================================================
-# 3. ANIMATION LOGIC — clean, readable
+# 3. ANIMATION
 # =============================================================
-
 def animate_smooth_yearly_transition(df, start_months, colors,
-                                     transition_frames=20):
-    """
-    Build and animate smooth transitions between year-to-year
-    dispatch averages.
-    """
-    fig, ax = plt.subplots(figsize=(14, 6))
+                                     transition_frames=20,
+                                     pause_frames=25):
 
-    # Step 1 — compute AVERAGES
+    fig, ax = plt.subplots(figsize=(8, 8))
+
     periods = []
     for month in start_months:
         stack, order = make_three_month_avg_stack(df, month)
         yr = pd.Timestamp(month).year
         periods.append((stack, order, yr))
 
-    # Step 2 — build all transitional frames
-    frames, titles, order = build_sequence_of_frames(periods, transition_frames)
+    frames, titles, order = build_sequence_of_frames(periods, transition_frames, pause_frames)
 
-    # Step 3 — animation
     def update(i):
         plot_stack(ax, frames[i], order, colors, titles[i])
 
     anim = FuncAnimation(
-        fig,
-        update,
+        fig, update,
         frames=len(frames),
         interval=40,
         repeat=True,
+        blit=False,
     )
 
     plt.show()
@@ -178,6 +171,7 @@ def animate_smooth_yearly_transition(df, start_months, colors,
 # 4. MAIN
 # =============================================================
 if __name__ == "__main__":
+
     path = r"C:\Users\barna\OneDrive\Documents\data\caiso\caiso_fuel_mix_may_range.csv"
     df = pd.read_csv(path)
 
@@ -196,17 +190,12 @@ if __name__ == "__main__":
         "Nuclear": "#B3E5FC",
     }
 
-    start_months = [
-        "2021-04-01",
-        "2022-04-01",
-        "2023-04-01",
-        "2024-04-01",
-        "2025-04-01",
-    ]
+    start_months = ["2021-04-01","2022-04-01","2023-04-01","2024-04-01","2025-04-01"]
 
     animate_smooth_yearly_transition(
         df,
         start_months,
         colors,
-        transition_frames=20   # 20 smooth steps between seasons
+        transition_frames=20,
+        pause_frames=30,
     )
