@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="looking good">
+    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="fps, fontweight">
+      <change afterPath="$PROJECT_DIR$/animation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data_prep.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/main_monthly.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/main_trailing.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plotting.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/api.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -33,12 +38,18 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.animation.executor": "Run",
     "Python.api.executor": "Run",
+    "Python.data_prep.executor": "Run",
     "Python.main.executor": "Run",
+    "Python.main_monthly.executor": "Run",
+    "Python.main_trailing.executor": "Run",
+    "Python.records.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master"
+    "git-widget-placeholder": "master",
+    "settings.editor.selected.configurable": "preferences.lookFeel"
   }
 }]]></component>
   <component name="SharedIndexes">
@@ -120,8 +131,51 @@
       <option name="project" value="LOCAL" />
       <updated>1763673302016</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="looking good">
+      <option name="closed" value="true" />
+      <created>1763807223935</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1763807223935</updated>
+    </task>
+    <task id="LOCAL-00010" summary="animation working">
+      <option name="closed" value="true" />
+      <created>1763839756504</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1763839756504</updated>
+    </task>
+    <task id="LOCAL-00011" summary="updates to font etc">
+      <option name="closed" value="true" />
+      <created>1763842234522</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1763842234522</updated>
+    </task>
+    <task id="LOCAL-00012" summary="fps, fontweight">
+      <option name="closed" value="true" />
+      <created>1764017855777</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1764017855777</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="start" />
@@ -132,6 +186,9 @@
     <MESSAGE value="5 min plot working" />
     <MESSAGE value="animation" />
     <MESSAGE value="looking good" />
-    <option name="LAST_COMMIT_MESSAGE" value="looking good" />
+    <MESSAGE value="animation working" />
+    <MESSAGE value="updates to font etc" />
+    <MESSAGE value="fps, fontweight" />
+    <option name="LAST_COMMIT_MESSAGE" value="fps, fontweight" />
   </component>
 </project>

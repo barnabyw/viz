@@ -229,26 +229,32 @@ if __name__ == "__main__":
     df.index = df.index.tz_convert("America/Los_Angeles").tz_localize(None)
 
     colors = {
-        "Solar": "#FFE082",
-        "Battery Discharge": "#FB8C00",
-        "Battery Charge": "#FFB74D",
-        "Wind": "#90CAF9",
-        "Hydro": "#64B5F6",
-        "Gas": "#B0BEC5",
-        "Imports": "#CFD8DC",
-        "Nuclear": "#B3E5FC",
+        # Keep original hero colours
+        "Solar": '#FFBB00', #"#FFE082",
+        "Battery Discharge": '#375E97', #1995AD', #"#FB8C00",
+
+        # All others as light greys (ordered light → dark)
+        "Nuclear": "#F2F2F2",
+        "Wind": "#E0E0E0",
+        "Battery Charge": "#CDCDCD",
+        "Imports": "#BBBBBB",
+        "Hydro": "#A7A7A7",
+        "Gas": "#919191",
     }
 
-    start_months = ["2021-04-01","2022-04-01","2023-04-01","2024-04-01","2025-04-01"]
+
+    start_months = ["2019-04-01", "2020-04-01", "2021-04-01","2022-04-01","2023-04-01","2024-04-01","2025-04-01"]
 
     # ——— New timing parameters ———
     fps = 50
     transition_seconds = 0.25
     pause_seconds = {
-        2021: 0.75,
+        2019: 0.75,
+        2020: 0.5,
+        2021: 0.5,
         2022: 0.5,
         2023: 0.5,
-        2024: 1.5,
+        2024: 1,
         2025: 3,
     }
 
