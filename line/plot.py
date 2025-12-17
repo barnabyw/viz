@@ -23,6 +23,10 @@ FONT_MEDIUM  = fm.FontProperties(fname=medium_path)
 FONT_BOLD    = fm.FontProperties(fname=bold_path)
 FONT_SEMI_BOLD = fm.FontProperties(fname=semi_bold_path)
 
+small_text = 13
+medium_text = 15
+title = 20
+
 # ---------------------------
 # Load and filter data
 # ---------------------------
@@ -31,7 +35,6 @@ df_raw = pd.read_csv(
 )
 
 df = df_raw.copy()
-
 COUNTRY = "United States"
 df = df[df["Country"] == COUNTRY]
 
@@ -62,7 +65,6 @@ REFERENCE_LCOE = (
 
 df["scenario"] = list(zip(df["Tech"], df["Year"]))
 df = df[df["scenario"].isin(TECH_YEARS)]
-
 groups = df.groupby(["Tech", "Year"])
 
 # ---------------------------
@@ -97,14 +99,12 @@ def curve_label_properties_display(ax, x, y, x_center=0.6, dx=0.05, offset_px=20
     angle = np.degrees(np.arctan2(v[1], v[0]))
 
     n = np.array([-v[1], v[0]])
-    n = n / np.linalg.norm(n)
+    n /= np.linalg.norm(n)
 
     pc = ax.transData.transform((x_center, yc))
     pl = pc + n * offset_px
 
-    x_lab, y_lab = ax.transData.inverted().transform(pl)
-
-    return x_lab, y_lab, angle
+    return *ax.transData.inverted().transform(pl), angle
 
 # ---------------------------
 # Figure (1920x1080)
@@ -112,29 +112,32 @@ def curve_label_properties_display(ax, x, y, x_center=0.6, dx=0.05, offset_px=20
 DPI = 100
 fig, ax = plt.subplots(figsize=(1920 / DPI, 1080 / DPI), dpi=DPI)
 
-fig.subplots_adjust(left=0.08, right=0.85, top=0.88, bottom=0.12)
+fig.subplots_adjust(
+    left=0.08,
+    right=0.85,
+    top=0.84,     # ⬅ compressed downward
+    bottom=0.14
+)
 
 # ---------------------------
-# Title & subtitle
+# Title & subtitle (lowered)
 # ---------------------------
 fig.text(
-    0.04, 0.94,
+    0.05, 0.91,
     COUNTRY,
     fontproperties=FONT_SEMI_BOLD,
-    fontsize=22,
+    fontsize=title,
     color=BLACK,
-    ha="left",
-    va="bottom"
+    ha="left"
 )
 
 fig.text(
-    0.04, 0.905,
+    0.05, 0.875,
     "Levelised cost of electricity ($/MWh)",
     fontproperties=FONT_REGULAR,
-    fontsize=14,
+    fontsize=medium_text,
     color=DARK_GREY,
-    ha="left",
-    va="bottom"
+    ha="left"
 )
 
 fig.patch.set_facecolor("#FBFBFB")
@@ -145,16 +148,16 @@ ax.margins(x=0)
 ax.set_ylim(0, 160)
 
 # ---------------------------
-# Gridlines
+# Gridlines (horizontal only)
 # ---------------------------
-ax.hlines(np.arange(0, 160, 20), 0, 1.05, color=CLOUD, lw=0.6, zorder=0)
-#ax.vlines(np.arange(0, 1.05, 0.1), 0, 160, color=CLOUD, lw=0.6, zorder=0)
+ax.hlines(np.arange(0, 160, 20), *ax.get_xlim(), color=CLOUD, lw=0.6, zorder=0)
 
 # ---------------------------
 # Plot lines + labels
 # ---------------------------
 LW_MAIN = 2.6
-LABEL_X_PAD = 0.02
+LABEL_X_PAD = 0.015
+HLINE_LABEL_X = 1.01  # ⬅ moved left
 
 for (tech, year), data in groups:
     color = COLOR_MAP[(tech, year)]
@@ -167,65 +170,56 @@ for (tech, year), data in groups:
         y_vals = data["LCOE"].values
 
         ax.plot(x_vals, y_vals, lw=LW_MAIN, color=color, zorder=3)
-
-        x, y, angle = curve_label_properties_display(
-            ax, x_vals, y_vals, offset_px=20
-        )
+        x, y, angle = curve_label_properties_display(ax, x_vals, y_vals)
 
     else:
         y = REFERENCE_LCOE[(tech, year)]
-        ax.hlines(y, 0, 1.05, lw=LW_MAIN, color=color, zorder=2)
-        x, angle = 1.05, 0
+        ax.hlines(y, *ax.get_xlim(), lw=LW_MAIN, color=color, zorder=2)
+        x, angle = HLINE_LABEL_X, 0
 
     ax.text(
-        x + (LABEL_X_PAD if label_mode == "end" else 0),
+        x,
         y,
         f"{tech} {year}",
-        fontproperties=FONT_BOLD,
-        fontsize=13,
+        fontproperties=FONT_SEMI_BOLD,
+        fontsize=small_text,
         color=color,
         rotation=angle,
         rotation_mode="anchor",
         va="center",
-        ha="left" if label_mode == "end" else "center"
+        ha="left"
     )
 
 # ---------------------------
-# Axes styling (fonts!)
+# X-axis styling
 # ---------------------------
-ax.set_xlabel("Availability", fontproperties=FONT_MEDIUM, fontsize=13, color=DARK_GREY)
-x_ticks = np.arange(0, 1.01, 0.1)
+ax.set_xlabel("Availability", fontproperties=FONT_REGULAR, fontsize=small_text, color=DARK_GREY)
 
+x_ticks = np.arange(0.1, 1.01, 0.1)
 ax.set_xticks(x_ticks)
 ax.set_xticklabels(
     [f"{int(x * 100)}%" for x in x_ticks],
-    fontproperties=FONT_MEDIUM,
-    fontsize=13,
+    fontproperties=FONT_REGULAR,
+    fontsize=small_text,
     color=DARK_GREY
 )
 
-# Stronger x-axis line
 ax.spines["bottom"].set_color(DARK_GREY)
 ax.spines["bottom"].set_linewidth(1.2)
 
-# Stronger x ticks
-ax.tick_params(
-    axis="x",
-    length=10,
-    width=1.2,
-    color=DARK_GREY
-)
+ax.tick_params(axis="x", length=10, width=1.2, color=DARK_GREY)
 
-for label in ax.get_xticklabels() + ax.get_yticklabels():
-    label.set_fontproperties(FONT_MEDIUM)
-    label.set_fontsize(12)
+# Y-axis: labels only, no ticks or spine
+ax.spines["left"].set_visible(False)
+ax.tick_params(axis="y", length=0)
+
+for label in ax.get_yticklabels():
+    label.set_fontproperties(FONT_REGULAR)
+    label.set_fontsize(small_text)
     label.set_color(DARK_GREY)
 
-ax.tick_params(axis="x", length=8, color=DARK_GREY)
 
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
-ax.spines["left"].set_visible(False)
-ax.spines["bottom"].set_color(DARK_GREY)
 
 plt.show()
