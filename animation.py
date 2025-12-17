@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, FFMpegWriter
 import pandas as pd
 from tqdm import tqdm
 from plotting import plot_stack, plot_line
@@ -78,7 +78,7 @@ def animate_smooth_yearly_transition(periods, fps, transition_seconds, pause_sec
 from data_prep import make_trailing_year_stack
 from plotting import plot_stack
 
-def animate_trailing_yearly_stack(df, fps=30, window_days=365):
+def animate_trailing_yearly_stack(df, save_path=None, fps=30, window_days=365):
 
     # one frame per day in the dataset
     all_days = pd.date_range(df.index.min() + pd.Timedelta(days=window_days),
@@ -90,12 +90,13 @@ def animate_trailing_yearly_stack(df, fps=30, window_days=365):
     for day in tqdm(all_days, desc="Building trailing-year frames"):
         stack, order = make_trailing_year_stack(df, day, window_days)
         frames.append(stack)
-        titles.append(f"Trailing {window_days}-Day Average up to {day.date()}")
+        titles.append(f"CAISO trailing year average power mix up to {day.date()}")
 
-    fig, ax = plt.subplots(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
 
     def update(i):
-        plot_stack(ax, frames[i], order, titles[i], ylim=(0,30))
+        ax.clear()
+        plot_stack(ax, frames[i], order, titles[i], ylim=(0, 35))
 
     anim = FuncAnimation(
         fig,
@@ -105,5 +106,16 @@ def animate_trailing_yearly_stack(df, fps=30, window_days=365):
         repeat=False
     )
 
-    plt.show()
+    if save_path is not None:
+        writer = FFMpegWriter(
+            fps=fps,
+            codec="libx264",
+            bitrate=8000,
+            extra_args=["-pix_fmt", "yuv420p"]
+        )
+        anim.save(save_path, writer=writer)
+    else:
+        plt.show()
+
+    plt.close(fig)
     return anim

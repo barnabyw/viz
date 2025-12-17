@@ -5,4 +5,6 @@ if __name__ == "__main__":
     data_path = r"C:\Users\barna\OneDrive\Documents\data\caiso\raw_years"
     df = load_caiso_folder(data_path)
 
-    animate_trailing_yearly_stack(df, fps=60)
+    print(df.columns)
+
+    animate_trailing_yearly_stack(df, save_path=r"C:\Users\barna\OneDrive\Documents\Solar_BESS\Good charts\video\solar_avg.mp4", fps=100)
