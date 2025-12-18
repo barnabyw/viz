@@ -3,46 +3,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.font_manager as fm
 
+# ===============================================================
+# CONFIGURATION
+# ===============================================================
 COUNTRY = "China"
-title = f"In the {COUNTRY}, cheap gas is similar cost to standalone solar"
+TITLE = f"In the {COUNTRY}, cheap gas is similar cost to standalone solar"
 
 # ---------------------------
-# Fonts
+# Default fossil assumptions
 # ---------------------------
-font_dir = r"C:\Users\barna\AppData\Local\Microsoft\Windows\Fonts"
-
-regular_path = fr"{font_dir}\Montserrat-Regular.ttf"
-medium_path  = fr"{font_dir}\Montserrat-Medium.ttf"
-semi_bold_path = fr"{font_dir}\Montserrat-SemiBold.ttf"
-bold_path    = fr"{font_dir}\Montserrat-Bold.ttf"
-
-fm.fontManager.addfont(regular_path)
-fm.fontManager.addfont(medium_path)
-fm.fontManager.addfont(bold_path)
-fm.fontManager.addfont(semi_bold_path)
-
-FONT_REGULAR = fm.FontProperties(fname=regular_path)
-FONT_MEDIUM  = fm.FontProperties(fname=medium_path)
-FONT_BOLD    = fm.FontProperties(fname=bold_path)
-FONT_SEMI_BOLD = fm.FontProperties(fname=semi_bold_path)
-
-small_text = 15
-medium_text = 17
-title_size = 22
+DEFAULT_FOSSIL_LF = [0.7]  # availability used as load factor
 
 # ---------------------------
-# Load and filter data
+# Tech-years (user-facing)
 # ---------------------------
-df_raw = pd.read_csv(
-    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results.csv"
-)
-df = df_raw.copy()
-df = df[df["Country"] == COUNTRY]
-
 TECH_YEARS = [
-    ("Solar+BESS", 2015),
-    ("Solar+BESS", 2025),
-    ("Gas", 2025),
+    {"tech": "Solar+BESS", "year": 2015},
+    {"tech": "Solar+BESS", "year": 2025},
+    {"tech": "Gas",        "year": 2025},              # uses default LF
+    # {"tech": "Gas",      "year": 2025, "lf": [0.5]}, # override example
 ]
 
 TECH_RENDER = {
@@ -57,33 +36,68 @@ TECH_LABEL_MODE = {
     "Coal": "end",
 }
 
-REFERENCE_LCOE = (
-    df[df["Tech"].isin(["Gas", "Coal"])]
-    .groupby(["Tech", "Year"])["LCOE"]
-    .mean()
-    .to_dict()
-)
+# ===============================================================
+# FONTS
+# ===============================================================
+font_dir = r"C:\Users\barna\AppData\Local\Microsoft\Windows\Fonts"
 
-df["scenario"] = list(zip(df["Tech"], df["Year"]))
-df = df[df["scenario"].isin(TECH_YEARS)]
-groups = df.groupby(["Tech", "Year"])
-
-# ---------------------------
-# Styling
-# ---------------------------
-COLOR_MAP = {
-    ("Solar+BESS", 2015): "#3969AC",
-    ("Solar+BESS", 2025): "#11A579",
-    ("Gas", 2025): "#E73F74",
+paths = {
+    "regular": fr"{font_dir}\Montserrat-Regular.ttf",
+    "medium": fr"{font_dir}\Montserrat-Medium.ttf",
+    "semi": fr"{font_dir}\Montserrat-SemiBold.ttf",
+    "bold": fr"{font_dir}\Montserrat-Bold.ttf",
 }
 
-BLACK = "#000000"
-DARK_GREY = "#373737"
-CLOUD = "#C5C6D0"
+for p in paths.values():
+    fm.fontManager.addfont(p)
 
-# ---------------------------
-# Label helper
-# ---------------------------
+FONT_REGULAR   = fm.FontProperties(fname=paths["regular"])
+FONT_MEDIUM    = fm.FontProperties(fname=paths["medium"])
+FONT_SEMI_BOLD = fm.FontProperties(fname=paths["semi"])
+FONT_BOLD      = fm.FontProperties(fname=paths["bold"])
+
+small_text  = 15
+medium_text = 17
+title_size  = 22
+
+# ===============================================================
+# LOAD DATA
+# ===============================================================
+df = pd.read_csv(
+    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results.csv"
+)
+df = df[df["Country"] == COUNTRY]
+
+# ===============================================================
+# NORMALISE TECH-YEARS (internal only)
+# ===============================================================
+NORMALISED_TECH_YEARS = []
+
+for t in TECH_YEARS:
+    tech = t["tech"]
+    year = t["year"]
+
+    if tech in ["Gas", "Coal"]:
+        lfs = t.get("lf", DEFAULT_FOSSIL_LF)
+        for lf in lfs:
+            NORMALISED_TECH_YEARS.append(
+                {"tech": tech, "year": year, "lf": lf}
+            )
+    else:
+        NORMALISED_TECH_YEARS.append(
+            {"tech": tech, "year": year, "lf": None}
+        )
+
+# ===============================================================
+# HELPERS
+# ===============================================================
+def fossil_lcoe_at_lf(df, tech, year, lf):
+    """Uses Availability as load factor proxy."""
+    subset = df[(df["Tech"] == tech) & (df["Year"] == year)]
+    idx = (subset["Availability"] - lf).abs().idxmin()
+    return subset.loc[idx, "LCOE"]
+
+
 def curve_label_properties_display(ax, x, y, x_center=0.6, dx=0.05, offset_px=20):
     x = np.asarray(x)
     y = np.asarray(y)
@@ -107,25 +121,41 @@ def curve_label_properties_display(ax, x, y, x_center=0.6, dx=0.05, offset_px=20
 
     return *ax.transData.inverted().transform(pl), angle
 
-# ---------------------------
-# Figure (1920x1080)
-# ---------------------------
+# ===============================================================
+# PRECOMPUTE FOSSIL LCOE
+# ===============================================================
+FOSSIL_LCOE = {}
+
+for s in NORMALISED_TECH_YEARS:
+    if s["tech"] in ["Gas", "Coal"]:
+        FOSSIL_LCOE[(s["tech"], s["year"], s["lf"])] = fossil_lcoe_at_lf(
+            df, s["tech"], s["year"], s["lf"]
+        )
+
+# ===============================================================
+# STYLING
+# ===============================================================
+COLOR_MAP = {
+    ("Solar+BESS", 2015): "#93C993",
+    ("Solar+BESS", 2025): "#2F7A2F",
+    ("Gas", 2025): "#7A7A7A",
+}
+
+BLACK = "#000000"
+DARK_GREY = "#373737"
+CLOUD = "#C5C6D0"
+
+# ===============================================================
+# FIGURE
+# ===============================================================
 DPI = 100
 fig, ax = plt.subplots(figsize=(1920 / DPI, 1080 / DPI), dpi=DPI)
 
-fig.subplots_adjust(
-    left=0.08,
-    right=0.85,
-    top=0.84,     # ⬅ compressed downward
-    bottom=0.14
-)
+fig.subplots_adjust(left=0.08, right=0.85, top=0.84, bottom=0.14)
 
-# ---------------------------
-# Title & subtitle (lowered)
-# ---------------------------
 fig.text(
     0.05, 0.91,
-    title,
+    TITLE,
     fontproperties=FONT_SEMI_BOLD,
     fontsize=title_size,
     color=BLACK,
@@ -148,40 +178,41 @@ ax.set_xlim(0.05, 1.0)
 ax.margins(x=0)
 ax.set_ylim(0, 160)
 
-# ---------------------------
-# Gridlines (horizontal only)
-# ---------------------------
-ax.hlines(np.arange(0, 160, 20), *ax.get_xlim(), color=CLOUD, lw=0.6, zorder=0)
+ax.hlines(np.arange(0, 160, 20), *ax.get_xlim(), color=CLOUD, lw=0.6)
 
-# ---------------------------
-# Plot lines + labels
-# ---------------------------
+# ===============================================================
+# PLOT
+# ===============================================================
 LW_MAIN = 2.6
-LABEL_X_PAD = 0.015
-HLINE_LABEL_X = 1.01  # ⬅ moved left
+HLINE_LABEL_X = 1.01
 
-for (tech, year), data in groups:
+for s in NORMALISED_TECH_YEARS:
+    tech, year, lf = s["tech"], s["year"], s["lf"]
     color = COLOR_MAP[(tech, year)]
-    mode = TECH_RENDER[tech]
-    label_mode = TECH_LABEL_MODE[tech]
 
-    if mode == "curve":
+    if TECH_RENDER[tech] == "curve":
+        data = df[(df["Tech"] == tech) & (df["Year"] == year)]
         data = data.sort_values("Availability")
+
         x_vals = data["Availability"].values
         y_vals = data["LCOE"].values
 
         ax.plot(x_vals, y_vals, lw=LW_MAIN, color=color, zorder=3)
         x, y, angle = curve_label_properties_display(ax, x_vals, y_vals)
 
+        label = f"{tech} {year}"
+
     else:
-        y = REFERENCE_LCOE[(tech, year)]
+        y = FOSSIL_LCOE[(tech, year, lf)]
         ax.hlines(y, *ax.get_xlim(), lw=LW_MAIN, color=color, zorder=2)
         x, angle = HLINE_LABEL_X, 0
+
+        label = f"{tech} {year} – {int(lf * 100)}% LF"
 
     ax.text(
         x,
         y,
-        f"{tech} {year}",
+        label,
         fontproperties=FONT_SEMI_BOLD,
         fontsize=medium_text,
         color=color,
@@ -191,9 +222,9 @@ for (tech, year), data in groups:
         ha="left"
     )
 
-# ---------------------------
-# X-axis styling
-# ---------------------------
+# ===============================================================
+# AXES
+# ===============================================================
 ax.set_xlabel("Load factor", fontproperties=FONT_REGULAR, fontsize=small_text, color=DARK_GREY)
 
 x_ticks = np.arange(0.1, 1.01, 0.1)
@@ -207,10 +238,8 @@ ax.set_xticklabels(
 
 ax.spines["bottom"].set_color(DARK_GREY)
 ax.spines["bottom"].set_linewidth(1.2)
-
 ax.tick_params(axis="x", length=10, width=1.2, color=DARK_GREY)
 
-# Y-axis: labels only, no ticks or spine
 ax.spines["left"].set_visible(False)
 ax.tick_params(axis="y", length=0)
 
@@ -218,7 +247,6 @@ for label in ax.get_yticklabels():
     label.set_fontproperties(FONT_REGULAR)
     label.set_fontsize(small_text)
     label.set_color(DARK_GREY)
-
 
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
