@@ -5,8 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="restructure">
+      <change afterPath="$PROJECT_DIR$/line/config.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/line/lcoe_chart.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/line/main.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/line/styling.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plot.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,6 +52,7 @@
     "Python.animation.executor": "Run",
     "Python.api.executor": "Run",
     "Python.data_prep.executor": "Run",
+    "Python.lcoe_chart.executor": "Run",
     "Python.main.executor": "Run",
     "Python.main_monthly.executor": "Run",
     "Python.main_trailing.executor": "Run",
@@ -205,7 +209,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766057959744</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="restructure">
+      <option name="closed" value="true" />
+      <created>1766086422080</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1766086422080</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
