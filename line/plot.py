@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.font_manager as fm
 
+COUNTRY = "China"
+title = f"In the {COUNTRY}, cheap gas is similar cost to standalone solar"
+
 # ---------------------------
 # Fonts
 # ---------------------------
@@ -23,9 +26,9 @@ FONT_MEDIUM  = fm.FontProperties(fname=medium_path)
 FONT_BOLD    = fm.FontProperties(fname=bold_path)
 FONT_SEMI_BOLD = fm.FontProperties(fname=semi_bold_path)
 
-small_text = 13
-medium_text = 15
-title = 20
+small_text = 15
+medium_text = 17
+title_size = 22
 
 # ---------------------------
 # Load and filter data
@@ -33,9 +36,7 @@ title = 20
 df_raw = pd.read_csv(
     r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results.csv"
 )
-
 df = df_raw.copy()
-COUNTRY = "United States"
 df = df[df["Country"] == COUNTRY]
 
 TECH_YEARS = [
@@ -124,9 +125,9 @@ fig.subplots_adjust(
 # ---------------------------
 fig.text(
     0.05, 0.91,
-    COUNTRY,
+    title,
     fontproperties=FONT_SEMI_BOLD,
-    fontsize=title,
+    fontsize=title_size,
     color=BLACK,
     ha="left"
 )
@@ -182,7 +183,7 @@ for (tech, year), data in groups:
         y,
         f"{tech} {year}",
         fontproperties=FONT_SEMI_BOLD,
-        fontsize=small_text,
+        fontsize=medium_text,
         color=color,
         rotation=angle,
         rotation_mode="anchor",
@@ -193,7 +194,7 @@ for (tech, year), data in groups:
 # ---------------------------
 # X-axis styling
 # ---------------------------
-ax.set_xlabel("Availability", fontproperties=FONT_REGULAR, fontsize=small_text, color=DARK_GREY)
+ax.set_xlabel("Load factor", fontproperties=FONT_REGULAR, fontsize=small_text, color=DARK_GREY)
 
 x_ticks = np.arange(0.1, 1.01, 0.1)
 ax.set_xticks(x_ticks)
