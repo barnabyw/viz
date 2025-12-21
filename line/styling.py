@@ -22,6 +22,10 @@ FONT_MEDIUM    = fm.FontProperties(fname=paths["medium"])
 FONT_SEMI_BOLD = fm.FontProperties(fname=paths["semi"])
 FONT_BOLD      = fm.FontProperties(fname=paths["bold"])
 
+small_font = 22
+medium_font = 24
+large_font = 27
+
 # ===============================================================
 # Colours
 # ===============================================================

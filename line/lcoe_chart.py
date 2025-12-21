@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from styling import (
     FONT_REGULAR, FONT_MEDIUM, FONT_SEMI_BOLD,
-    DARK_GREY, CLOUD, BACKGROUND, build_color_lookup
+    DARK_GREY, CLOUD, BACKGROUND, build_color_lookup, small_font, medium_font, large_font
 )
 
 # ===============================================================
@@ -16,31 +16,32 @@ def fossil_lcoe_at_lf(df, tech, year, lf):
     idx = (subset["Availability"] - lf).abs().idxmin()
     return subset.loc[idx, "LCOE"]
 
-
-def curve_label_properties_display(ax, x, y, x_center=0.6, dx=0.05, offset_px=40):
+def curve_label_properties_display(
+    ax,
+    x,
+    y,
+    x_anchor=0.62,
+    dx=0.05,
+    offset_px=18,
+):
     x = np.asarray(x)
     y = np.asarray(y)
 
-    x1, x2 = x_center - dx, x_center + dx
+    x1, x2 = x_anchor - dx, x_anchor + dx
     y1 = np.interp(x1, x, y)
     y2 = np.interp(x2, x, y)
-    yc = np.interp(x_center, x, y)
 
     p1 = ax.transData.transform((x1, y1))
     p2 = ax.transData.transform((x2, y2))
 
-    v = p2 - p1
-    angle = np.degrees(np.arctan2(v[1], v[0]))
+    angle = np.degrees(np.arctan2(p2[1] - p1[1], p2[0] - p1[0]))
 
-    n = np.array([-v[1], v[0]])
-    n /= np.linalg.norm(n)
+    y_curve = np.interp(x_anchor, x, y)
+    p_curve = ax.transData.transform((x_anchor, y_curve))
 
-    pc = ax.transData.transform((x_center, yc))
-    pl = pc + n * offset_px
+    p_label = p_curve + np.array([0, offset_px])
 
-    return *ax.transData.inverted().transform(pl), angle
-
-
+    return *ax.transData.inverted().transform(p_label), angle
 
 # ===============================================================
 # Main chart function
@@ -78,7 +79,7 @@ def plot_lcoe_chart(
     # ---------------------------
     DPI = 100
     fig, ax = plt.subplots(figsize=(1920 / DPI, 1080 / DPI), dpi=DPI)
-    fig.subplots_adjust(left=0.08, right=0.7, top=0.84, bottom=0.14)
+    fig.subplots_adjust(left=0.08, right=0.8, top=0.80, bottom=0.14)
 
     fig.patch.set_facecolor(BACKGROUND)
     ax.set_facecolor(BACKGROUND)
@@ -86,15 +87,15 @@ def plot_lcoe_chart(
     fig.text(
         0.05, 0.91, title,
         fontproperties=FONT_SEMI_BOLD,
-        fontsize=22,
+        fontsize=large_font,
         ha="left"
     )
 
     fig.text(
-        0.05, 0.875,
+        0.05, 0.87,
         "Levelised cost of electricity ($/MWh)",
         fontproperties=FONT_REGULAR,
-        fontsize=17,
+        fontsize=medium_font,
         color=DARK_GREY
     )
 
@@ -115,7 +116,7 @@ def plot_lcoe_chart(
     # Plot
     # ---------------------------
     LW_MAIN = 2.6
-    HLINE_LABEL_X = 1.02
+    HLINE_LABEL_X = 1.01
 
     for s in normalised:
         tech, year, lf = s["tech"], s["year"], s["lf"]
@@ -132,20 +133,23 @@ def plot_lcoe_chart(
             x, y, angle = curve_label_properties_display(ax, x_vals, y_vals)
             label = f"{tech} {year}"
 
+            horz_anchor = "center"
+
         else:
             y = fossil_lcoe_at_lf(df, tech, year, lf)
-            ax.hlines(y, *ax.get_xlim(), lw=LW_MAIN, color=color)
+            ax.hlines(y, *ax.get_xlim(), lw=LW_MAIN, color=color, linestyles=(0, (1.2, 1.5))) # dot length, gap length
             x, angle = HLINE_LABEL_X, 0
             label = f"{tech} {year} – {int(lf * 100)}% LF"
+            horz_anchor = "left"
 
         ax.text(
             x, y, label,
             fontproperties=FONT_SEMI_BOLD,
-            fontsize=17,
+            fontsize=medium_font,
             color=color,
             rotation=angle,
             va="center",
-            ha="left"
+            ha=horz_anchor
         )
 
     # ---------------------------
@@ -154,8 +158,9 @@ def plot_lcoe_chart(
     ax.set_xlabel(
         "Load factor",
         fontproperties=FONT_REGULAR,
-        fontsize=15,
-        color=DARK_GREY
+        fontsize=small_font,
+        color=DARK_GREY,
+        labelpad=14,  # ⬅ pushes title down
     )
 
     # X-axis
@@ -164,7 +169,7 @@ def plot_lcoe_chart(
     ax.set_xticklabels(
         [f"{int(t * 100)}%" for t in x_ticks],
         fontproperties=FONT_REGULAR,
-        fontsize=15,
+        fontsize=small_font,
         color=DARK_GREY
     )
 
@@ -179,7 +184,7 @@ def plot_lcoe_chart(
     ax.set_yticklabels(
         [f"{y}" for y in y_ticks],
         fontproperties=FONT_REGULAR,
-        fontsize=15,
+        fontsize=small_font,
         color=DARK_GREY
     )
 
