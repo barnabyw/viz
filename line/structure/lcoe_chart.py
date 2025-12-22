@@ -2,7 +2,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from styling import (
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+
+from line.style.styling import (
     FONT_REGULAR, FONT_MEDIUM, FONT_SEMI_BOLD,
     DARK_GREY, CLOUD, BACKGROUND, build_color_lookup, small_font, medium_font, large_font, STACK_COLOURS
 )

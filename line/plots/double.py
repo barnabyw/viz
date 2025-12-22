@@ -2,12 +2,14 @@ import pandas as pd
 import os
 import time
 import matplotlib.pyplot as plt
+from pathlib import Path
+import sys
 
-from utils import build_chart_name, mpl_text
-from config import TECH_RENDER, TECH_LABEL_MODE
-from lcoe_chart import draw_lcoe_chart, draw_generation_stack_chart
-from line.lcoe_chart import draw_capacity_cluster_chart
-from styling import (
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
+
+from line.style.config import TECH_RENDER, TECH_LABEL_MODE
+from line.style.styling import (
     BACKGROUND,
     FONT_SEMI_BOLD,
     FONT_REGULAR,
@@ -16,8 +18,15 @@ from styling import (
     medium_font,
     small_font,
 )
-from prep_stack import load_typical_week_by_availability
-from variable_map import VARIABLE_MAP
+
+from line.structure.lcoe_chart import (
+    draw_lcoe_chart,
+    draw_generation_stack_chart,
+    draw_capacity_cluster_chart,
+)
+
+from line.prep_stack import load_typical_week_by_availability
+from line.variable_map import VARIABLE_MAP
 
 # ===============================================================
 # Configuration

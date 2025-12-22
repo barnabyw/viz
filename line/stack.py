@@ -4,7 +4,7 @@ import time
 import matplotlib.pyplot as plt
 
 from utils import mpl_text
-from styling import (
+from line.style.styling import (
     BACKGROUND,
     FONT_SEMI_BOLD,
     FONT_REGULAR,
@@ -14,7 +14,7 @@ from styling import (
     small_font,
 )
 
-from lcoe_chart import draw_capacity_stack_chart  # wherever you put it
+from line.structure.lcoe_chart import draw_capacity_stack_chart  # wherever you put it
 
 
 # ======================================================

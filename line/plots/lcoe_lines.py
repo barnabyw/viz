@@ -2,11 +2,17 @@ import pandas as pd
 import os
 import time
 import matplotlib.pyplot as plt
+import sys
+from pathlib import Path
 
-from utils import build_chart_name, mpl_text
-from config import TECH_RENDER, TECH_LABEL_MODE
-from lcoe_chart import draw_lcoe_chart
-from styling import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+
+from line.utils import build_chart_name, mpl_text
+from line.style.config import TECH_RENDER, TECH_LABEL_MODE
+from line.structure.lcoe_chart import draw_lcoe_chart
+from line.style.styling import (
     BACKGROUND, FONT_SEMI_BOLD, FONT_REGULAR,
     DARK_GREY, large_font, medium_font, small_font
 )

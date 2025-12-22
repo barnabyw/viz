@@ -4,15 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="split working">
-      <change afterPath="$PROJECT_DIR$/line/prep_stack.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/line/variable_map.py" afterDir="false" />
+    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="triple mvp">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_prep.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_prep.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/double.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/double.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/lcoe_chart.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/lcoe_chart.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/styling.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/styling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/double.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/double.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/lcoe_chart.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/structure/lcoe_chart.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/lcoe_lines.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/plot.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/stack.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/stack.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/styling.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/styling.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,6 +58,7 @@
     "Python.data_prep.executor": "Run",
     "Python.double.executor": "Run",
     "Python.lcoe_chart.executor": "Run",
+    "Python.lcoe_lines.executor": "Run",
     "Python.main.executor": "Run",
     "Python.main_monthly.executor": "Run",
     "Python.main_trailing.executor": "Run",
@@ -73,6 +74,13 @@
     "settings.editor.selected.configurable": "preferences.lookFeel"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\barna\PycharmProjects\viz\line\plots" />
+      <recent name="C:\Users\barna\PycharmProjects\viz\line\style" />
+      <recent name="C:\Users\barna\PycharmProjects\viz\line\structure" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -248,7 +256,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766396652700</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="triple mvp">
+      <option name="closed" value="true" />
+      <created>1766402581644</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1766402581644</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -280,6 +296,7 @@
     <MESSAGE value="start looking good" />
     <MESSAGE value="pre split" />
     <MESSAGE value="split working" />
-    <option name="LAST_COMMIT_MESSAGE" value="split working" />
+    <MESSAGE value="triple mvp" />
+    <option name="LAST_COMMIT_MESSAGE" value="triple mvp" />
   </component>
 </project>
