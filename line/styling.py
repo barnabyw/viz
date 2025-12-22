@@ -49,6 +49,19 @@ FOSSIL_COLORS = [
     "#b10026",  # dark deep red
 ]
 
+STACK_COLOURS = {
+    "Solar": "#FFBB00",
+    "Battery Discharge": "#0F9ED5",
+    "Nuclear": "#F2F2F2",
+    "Wind": "#E0E0E0",
+    "Battery Charge": "#CDCDCD",
+    "Other": "#D6D6D6",
+    "Imports": "#BBBBBB",
+    "Hydro": "#A7A7A7",
+    "Gas": "#919191",
+    "Unmet Demand": "#BBBBBB"
+}
+
 CLEAN_CMAP = mcolors.LinearSegmentedColormap.from_list(
     "clean_green", CLEAN_COLORS
 )

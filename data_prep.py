@@ -169,6 +169,43 @@ def trailing_solar_bess_share(df, end_date, window_days=365):
         "total": 100 * (solar_mwh + bess_mwh) / load_mwh,
     }
 
+def build_stack_lookup(df, country, variable_map, anchor_year=2023):
+    lookup = {}
+
+    sub = df[df["Country"] == country]
+
+    for avail, g in sub.groupby("Availability"):
+        # build a datetime index for the full year
+        # assumes Hour is 0..8759 for the year
+        idx = pd.Timestamp(f"{anchor_year}-01-01") + pd.to_timedelta(g["Hour"], unit="h")
+
+        wide = (
+            g.assign(time=idx)
+             .pivot(index="time", columns="Variable", values="Value")
+             .fillna(0.0)
+             .sort_index()
+             .rename(columns=variable_map)
+        )
+
+        lookup[avail] = wide
+
+    return lookup
+
+def select_typical_week(stack_df, anchor_date="2024-01-01"):
+    week = (
+        stack_df
+        .assign(dow=stack_df.index.dayofweek, hour=stack_df.index.hour)
+        .groupby(["dow", "hour"])
+        .mean()
+        .reset_index()
+        .sort_values(["dow", "hour"])
+    )
+
+    start = pd.to_datetime(anchor_date)
+    idx = start + pd.to_timedelta(week["dow"] * 24 + week["hour"], unit="h")
+
+    week.index = idx
+    return week.drop(columns=["dow", "hour"])
 
 # =========================
 # Main

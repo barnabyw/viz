@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from styling import (
     FONT_REGULAR, FONT_MEDIUM, FONT_SEMI_BOLD,
-    DARK_GREY, CLOUD, BACKGROUND, build_color_lookup, small_font, medium_font, large_font
+    DARK_GREY, CLOUD, BACKGROUND, build_color_lookup, small_font, medium_font, large_font, STACK_COLOURS
 )
 
 # ===============================================================
@@ -263,3 +263,259 @@ def draw_capacity_stack_chart(
         color=DARK_GREY,
     )
 
+def draw_capacity_cluster_chart(
+    ax,
+    df,
+    tech_years,
+    ylims_power,
+    y_tick_step_power,
+    ylims_duration,
+    y_tick_step_duration,
+    bar_width=0.025,
+):
+    """
+    Clustered capacity chart vs availability.
+
+    For each availability:
+    - Left axis (MW): stacked Solar + BESS power capacity
+    - Right axis (h): storage duration (energy / power)
+    """
+
+    ax.cla()
+
+    # -------------------------------------------------
+    # Base styling
+    # -------------------------------------------------
+    ax.set_facecolor(BACKGROUND)
+    ax.margins(x=0)
+    ax.spines["top"].set_visible(False)
+
+    ax_power = ax
+    ax_duration = ax.twinx()
+
+    ax_duration.spines["top"].set_visible(False)
+    ax_duration.spines["right"].set_visible(False)
+
+    # -------------------------------------------------
+    # Colours
+    # -------------------------------------------------
+    COLOR_SOLAR = "#FDB813"
+    COLOR_BESS_P = "#55A868"
+    COLOR_DURATION = "#4C72B0"
+
+    # -------------------------------------------------
+    # Normalise tech-years
+    # -------------------------------------------------
+    normalised = [{"tech": s["tech"], "year": s["year"]} for s in tech_years]
+
+    # -------------------------------------------------
+    # Plot bars
+    # -------------------------------------------------
+    for s in normalised:
+        tech, year = s["tech"], s["year"]
+
+        data = (
+            df[(df["Tech"] == tech) & (df["Year"] == year)]
+            .sort_values("Availability")
+        )
+
+        x = data["Availability"].values
+        offset = bar_width / 2
+
+        solar_mw = data["Solar_Capacity_MW"].values
+        bess_power_mw = data["BESS_Power_MW"].values
+        duration_h = data["BESS_Energy_MWh"].values
+
+        # --- Power axis (stacked) ---
+        ax_power.bar(
+            x - offset,
+            solar_mw,
+            width=bar_width,
+            color=COLOR_SOLAR,
+            zorder=3,
+        )
+
+        ax_power.bar(
+            x - offset,
+            bess_power_mw,
+            bottom=solar_mw,
+            width=bar_width,
+            color=COLOR_BESS_P,
+            zorder=3,
+        )
+
+        # --- Duration axis ---
+        ax_duration.bar(
+            x + offset,
+            duration_h,
+            width=bar_width,
+            color=COLOR_DURATION,
+            zorder=3,
+        )
+
+    # -------------------------------------------------
+    # Left y-axis (MW) — shared styling, no grid
+    # -------------------------------------------------
+    style_y_axis(
+        ax=ax_power,
+        ylims=ylims_power,
+        y_tick_step=y_tick_step_power,
+    )
+
+    ax_power.grid(False)
+
+    ax_power.set_ylabel(
+        "Installed power (MW)",
+        fontproperties=FONT_REGULAR,
+        fontsize=small_font,
+        color=DARK_GREY,
+        labelpad=10,
+    )
+
+    # -------------------------------------------------
+    # Right y-axis (hours) — explicit ticks
+    # -------------------------------------------------
+    y_min, y_max = ylims_duration
+    y_ticks = np.arange(y_min, y_max + 1e-9, y_tick_step_duration)
+    y_ticks = y_ticks[y_ticks <= y_max]
+
+    ax_duration.set_ylim(y_min, y_max)
+    ax_duration.set_yticks(y_ticks)
+    ax_duration.set_yticklabels(
+        [f"{y:g} h" for y in y_ticks],
+        fontproperties=FONT_REGULAR,
+        fontsize=small_font,
+        color=DARK_GREY,
+    )
+
+    ax_duration.tick_params(axis="y", length=0, pad=6)
+
+    # -------------------------------------------------
+    # X-axis
+    # -------------------------------------------------
+    ax_power.set_xticks(np.arange(0.1, 1.01, 0.1))
+    ax_power.set_xticklabels(
+        [f"{int(t * 100)}%" for t in ax_power.get_xticks()],
+        fontproperties=FONT_REGULAR,
+        fontsize=small_font,
+        color=DARK_GREY,
+    )
+
+def draw_generation_stack_chart(
+    ax,
+    stack_df,
+    order,
+    ylims=None,
+    daily=False,
+    unit="GW",
+):
+    """
+    Stacked generation chart.
+
+    - Data expected in MW
+    - unit="GW" or "MW" controls display scaling
+    - daily=True → 24-hour profile
+    - daily=False → typical week (168 hours)
+    """
+
+    ax.cla()
+
+    # ---------------------------
+    # Base axis styling
+    # ---------------------------
+    ax.set_facecolor(BACKGROUND)
+    ax.margins(x=0)
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+
+    # ---------------------------
+    # Ensure all ordered techs exist
+    # ---------------------------
+    stack_df = stack_df.copy()
+    for tech in order:
+        if tech not in stack_df.columns:
+            stack_df[tech] = 0.0
+
+    # ---------------------------
+    # Data prep
+    # ---------------------------
+    if unit == "GW":
+        scale = 1_000.0
+        unit_label = "GW"
+    elif unit == "MW":
+        scale = 1.0
+        unit_label = "MW"
+    else:
+        raise ValueError("unit must be 'GW' or 'MW'")
+
+    stack_scaled = stack_df[order] / scale
+
+    # ---------------------------
+    # Stackplot
+    # ---------------------------
+    ax.stackplot(
+        stack_scaled.index,
+        [stack_scaled[col] for col in order],
+        colors=[STACK_COLOURS[col] for col in order],
+        alpha=0.95,
+        zorder=2,
+    )
+
+    # ---------------------------
+    # Y-axis
+    # ---------------------------
+    if ylims is not None:
+        ax.set_ylim(*ylims)
+    else:
+        ymax = stack_scaled.sum(axis=1).max()
+        ax.set_ylim(0, ymax * 1.1)
+
+    yticks = ax.get_yticks()
+    ax.set_yticks(yticks)
+    ax.set_yticklabels(
+        [f"{t:g} {unit_label}" for t in yticks],
+        fontproperties=FONT_REGULAR,
+        fontsize=small_font,
+        color=DARK_GREY,
+    )
+
+    # ---------------------------
+    # X-axis
+    # ---------------------------
+    if daily:
+        desired = {"06:00": "6 AM", "12:00": "12 PM", "18:00": "6 PM"}
+        xticks = [t for t in stack_scaled.index if t.strftime("%H:%M") in desired]
+
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(
+            [desired[t.strftime("%H:%M")] for t in xticks],
+            fontproperties=FONT_REGULAR,
+            fontsize=small_font,
+            color=DARK_GREY,
+        )
+    else:
+        hours = stack_scaled.index.hour
+        dows = stack_scaled.index.dayofweek
+
+        tick_mask = (hours == 6) & (dows.isin([0, 2, 4, 6]))
+        xticks = stack_scaled.index[tick_mask]
+        labels = [t.strftime("%a ") + "6AM" for t in xticks]
+
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(
+            labels,
+            fontproperties=FONT_REGULAR,
+            fontsize=small_font,
+            color=DARK_GREY,
+        )
+
+    # ---------------------------
+    # Grid
+    # ---------------------------
+    ax.grid(
+        axis="y",
+        color=CLOUD,
+        linewidth=0.8,
+        alpha=0.35,
+        zorder=1,
+    )

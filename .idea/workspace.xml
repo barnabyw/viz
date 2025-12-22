@@ -4,12 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="pre split">
-      <change afterPath="$PROJECT_DIR$/line/double.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/line/stack.py" afterDir="false" />
+    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="split working">
+      <change afterPath="$PROJECT_DIR$/line/prep_stack.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/line/variable_map.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_prep.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_prep.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/double.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/double.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/lcoe_chart.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/lcoe_chart.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/styling.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/styling.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,6 +65,7 @@
     "Python.plotting.executor": "Run",
     "Python.records.executor": "Run",
     "Python.stack.executor": "Run",
+    "Python.variable_map.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -236,7 +240,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766325773602</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="split working">
+      <option name="closed" value="true" />
+      <created>1766396652700</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1766396652700</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -267,6 +279,7 @@
     <MESSAGE value="restructure" />
     <MESSAGE value="start looking good" />
     <MESSAGE value="pre split" />
-    <option name="LAST_COMMIT_MESSAGE" value="pre split" />
+    <MESSAGE value="split working" />
+    <option name="LAST_COMMIT_MESSAGE" value="split working" />
   </component>
 </project>
