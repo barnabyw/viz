@@ -4,12 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="triple improved">
-      <change afterPath="$PROJECT_DIR$/line/plots/lcoe_lines_areas.py" afterDir="false" />
+    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="add area chart, highlight">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/plots/double.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/double.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/stack.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/stack.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/prep_stack.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/structure/prep_stack.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/structure/lcoe_chart.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/structure/lcoe_chart.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/style/styling.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/styling.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/variable_map.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/variable_map.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,9 +76,9 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\barna\PycharmProjects\viz\line\structure" />
       <recent name="C:\Users\barna\PycharmProjects\viz\line\plots" />
       <recent name="C:\Users\barna\PycharmProjects\viz\line\style" />
-      <recent name="C:\Users\barna\PycharmProjects\viz\line\structure" />
     </key>
   </component>
   <component name="SharedIndexes">
@@ -270,7 +272,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766404501436</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="add area chart, highlight">
+      <option name="closed" value="true" />
+      <created>1766408152200</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1766408152200</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -304,6 +314,7 @@
     <MESSAGE value="split working" />
     <MESSAGE value="triple mvp" />
     <MESSAGE value="triple improved" />
-    <option name="LAST_COMMIT_MESSAGE" value="triple improved" />
+    <MESSAGE value="add area chart, highlight" />
+    <option name="LAST_COMMIT_MESSAGE" value="add area chart, highlight" />
   </component>
 </project>

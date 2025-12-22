@@ -26,11 +26,23 @@ def _build_stack_lookup(df, country, variable_map, anchor_year):
 
         wide = (
             g.assign(time=idx)
-             .pivot(index="time", columns="Variable", values="Value")
-             .fillna(0.0)
-             .sort_index()
-             .rename(columns=variable_map)
+            .pivot(index="time", columns="Variable", values="Value")
+            .fillna(0.0)
+            .sort_index()
+            .rename(columns=variable_map)
         )
+
+        # ---------------------------
+        # Sign conventions
+        # ---------------------------
+        NEGATIVE_VARS = [
+            "Battery Charge",
+            "Curtailment",
+        ]
+
+        for col in NEGATIVE_VARS:
+            if col in wide.columns:
+                wide[col] *= -1
 
         lookup[avail] = wide
 

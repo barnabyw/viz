@@ -362,22 +362,19 @@ def draw_capacity_cluster_chart(
     ax,
     df,
     tech_years,
-    ylims_power,
-    y_tick_step_power,
-    ylims_duration,
-    y_tick_step_duration,
+    max_avail=None,
+    duration_power_ratio=4.0,   # hours per MW (axis scaling only)
     bar_width=0.025,
     highlight_avail=None,
 ):
     """
     Clustered capacity chart vs availability.
 
-    For each availability:
-    - Left axis (MW): stacked Solar + BESS power capacity
-    - Right axis (h): storage duration (energy / power)
-
-    Optional:
-    - highlight_avail: float (e.g. 0.75) to emphasise one load factor
+    Behaviour:
+    - Plots availabilities <= max_avail (if provided)
+    - Left axis: stacked Solar + BESS power (MW) [axis hidden]
+    - Right axis: duration proxy (h) via fixed ratio [axis hidden]
+    - X-axis unchanged
     """
 
     ax.cla()
@@ -387,14 +384,23 @@ def draw_capacity_cluster_chart(
     # -------------------------------------------------
     ax.set_facecolor(BACKGROUND)
     ax.margins(x=0)
-    ax.spines["top"].set_visible(False)
 
     ax_power = ax
     ax_duration = ax.twinx()
 
-    ax_duration.spines["top"].set_visible(False)
-    ax_duration.spines["right"].set_visible(False)
+    # Hide vertical + top spines, keep bottom (x-axis line)
+    for spine in ["top", "right", "left"]:
+        ax_power.spines[spine].set_visible(False)
+        ax_duration.spines[spine].set_visible(False)
 
+    # Explicitly keep bottom spine visible
+    ax_power.spines["bottom"].set_visible(True)
+    ax_power.spines["bottom"].set_color(DARK_GREY)
+    ax_power.spines["bottom"].set_linewidth(0.8)
+
+    # Kill y ticks explicitly (belt + braces)
+    ax_power.set_yticks([])
+    ax_duration.set_yticks([])
     # -------------------------------------------------
     # Colours
     # -------------------------------------------------
@@ -411,6 +417,7 @@ def draw_capacity_cluster_chart(
     normalised = [{"tech": s["tech"], "year": s["year"]} for s in tech_years]
 
     highlight_x = None
+    max_power_seen = 0.0
 
     # -------------------------------------------------
     # Plot bars
@@ -418,10 +425,12 @@ def draw_capacity_cluster_chart(
     for s in normalised:
         tech, year = s["tech"], s["year"]
 
-        data = (
-            df[(df["Tech"] == tech) & (df["Year"] == year)]
-            .sort_values("Availability")
-        )
+        data = df[(df["Tech"] == tech) & (df["Year"] == year)].copy()
+
+        if max_avail is not None:
+            data = data[data["Availability"] <= max_avail]
+
+        data = data.sort_values("Availability")
 
         x = data["Availability"].values
         offset = bar_width / 2
@@ -437,6 +446,9 @@ def draw_capacity_cluster_chart(
 
             if is_highlight:
                 highlight_x = xi
+
+            total_power = smw + bpmw
+            max_power_seen = max(max_power_seen, total_power)
 
             # --- Power (stacked) ---
             ax_power.bar(
@@ -458,7 +470,7 @@ def draw_capacity_cluster_chart(
                 zorder=3,
             )
 
-            # --- Duration ---
+            # --- Duration (scaled via ratio) ---
             ax_duration.bar(
                 xi + offset,
                 dh,
@@ -469,45 +481,13 @@ def draw_capacity_cluster_chart(
             )
 
     # -------------------------------------------------
-    # Left y-axis (MW)
+    # Axis scaling (invisible)
     # -------------------------------------------------
-    style_y_axis(
-        ax=ax_power,
-        ylims=ylims_power,
-        y_tick_step=y_tick_step_power,
-    )
-
-    ax_power.grid(False)
-    ax_duration.spines["left"].set_visible(False)
-
-    ax_power.set_ylabel(
-        "Installed power (MW)",
-        fontproperties=FONT_REGULAR,
-        fontsize=small_font,
-        color=DARK_GREY,
-        labelpad=10,
-    )
+    ax_power.set_ylim(0, max_power_seen * 2)
+    ax_duration.set_ylim(0, max_power_seen * duration_power_ratio)
 
     # -------------------------------------------------
-    # Right y-axis (hours)
-    # -------------------------------------------------
-    y_min, y_max = ylims_duration
-    y_ticks = np.arange(y_min, y_max + 1e-9, y_tick_step_duration)
-    y_ticks = y_ticks[y_ticks <= y_max]
-
-    ax_duration.set_ylim(y_min, y_max)
-    ax_duration.set_yticks(y_ticks)
-    ax_duration.set_yticklabels(
-        [f"{y:g} h" for y in y_ticks],
-        fontproperties=FONT_REGULAR,
-        fontsize=small_font,
-        color=DARK_GREY,
-    )
-
-    ax_duration.tick_params(axis="y", length=0, pad=6)
-
-    # -------------------------------------------------
-    # X-axis
+    # X-axis (unchanged)
     # -------------------------------------------------
     ax_power.set_xticks(np.arange(0.1, 1.01, 0.1))
     ax_power.set_xticklabels(
@@ -531,9 +511,9 @@ def draw_capacity_cluster_chart(
 
         ax_power.text(
             highlight_x,
-            ylims_power[1],
+            ax_power.get_ylim()[1],
             f"Load factor: {int(highlight_x * 100)}%",
-            ha="center",
+            ha="right",
             va="bottom",
             fontproperties=FONT_SEMI_BOLD,
             fontsize=small_font,
@@ -545,9 +525,12 @@ def draw_generation_stack_chart(
     ax,
     stack_df,
     order,
-    ylims=None,
+    ylims=(0,1.2),
     unit="GW",
 ):
+    POSITIVE = ["Solar", "Battery Discharge", "Unmet Demand"]
+    NEGATIVE = ["Battery Charge", "Curtailment"]
+
     """
     Stacked generation chart.
 
@@ -591,27 +574,36 @@ def draw_generation_stack_chart(
     # ---------------------------
     # Stackplot
     # ---------------------------
+    # ---------------------------
+    # Positive stack (above zero)
+    # ---------------------------
     ax.stackplot(
         stack_scaled.index,
-        [stack_scaled[col] for col in order],
-        colors=[STACK_COLOURS[col] for col in order],
+        [stack_scaled[c] for c in POSITIVE if c in stack_scaled.columns],
+        colors=[STACK_COLOURS[c] for c in POSITIVE if c in stack_scaled.columns],
         alpha=0.95,
         zorder=2,
     )
 
     # ---------------------------
-    # Y-axis
+    # Negative stack (below zero)
     # ---------------------------
-    if ylims is not None:
-        ax.set_ylim(*ylims)
-    else:
-        ymax = stack_scaled.sum(axis=1).max()
-        ax.set_ylim(0, ymax * 1.1)
+    ax.stackplot(
+        stack_scaled.index,
+        [stack_scaled[c] for c in NEGATIVE if c in stack_scaled.columns],
+        colors=[STACK_COLOURS[c] for c in NEGATIVE if c in stack_scaled.columns],
+        alpha=0.95,
+        zorder=2,
+    )
 
-    yticks = ax.get_yticks()
-    ax.set_yticks(yticks)
+    # ---------------------------
+    # Y-axis (only 0 and 1)
+    # ---------------------------
+    ax.set_ylim(*ylims)
+
+    ax.set_yticks([-1, 0, 1])
     ax.set_yticklabels(
-        [f"{t:g} {unit_label}" for t in yticks],
+        [f"-1 {unit_label}", f"0", f"1 {unit_label}"],
         fontproperties=FONT_REGULAR,
         fontsize=small_font,
         color=DARK_GREY,

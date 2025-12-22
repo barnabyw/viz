@@ -59,7 +59,8 @@ STACK_COLOURS = {
     "Imports": "#BBBBBB",
     "Hydro": "#A7A7A7",
     "Gas": "#919191",
-    "Unmet Demand": "#BBBBBB"
+    "Unmet Demand": "#BBBBBB",
+    "Curtailment": "#ef3b2c"
 }
 
 CLEAN_CMAP = mcolors.LinearSegmentedColormap.from_list(
