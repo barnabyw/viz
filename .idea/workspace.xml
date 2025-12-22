@@ -4,15 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="triple mvp">
+    <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="triple improved">
+      <change afterPath="$PROJECT_DIR$/line/plots/lcoe_lines_areas.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/double.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/double.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/lcoe_chart.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/structure/lcoe_chart.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/lcoe_lines.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/plot.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/plots/double.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/double.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/stack.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/stack.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/styling.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/styling.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/structure/lcoe_chart.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/structure/lcoe_chart.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,6 +56,7 @@
     "Python.double.executor": "Run",
     "Python.lcoe_chart.executor": "Run",
     "Python.lcoe_lines.executor": "Run",
+    "Python.lcoe_lines_areas.executor": "Run",
     "Python.main.executor": "Run",
     "Python.main_monthly.executor": "Run",
     "Python.main_trailing.executor": "Run",
@@ -264,7 +262,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766402581644</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="triple improved">
+      <option name="closed" value="true" />
+      <created>1766404501436</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1766404501436</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -297,6 +303,7 @@
     <MESSAGE value="pre split" />
     <MESSAGE value="split working" />
     <MESSAGE value="triple mvp" />
-    <option name="LAST_COMMIT_MESSAGE" value="triple mvp" />
+    <MESSAGE value="triple improved" />
+    <option name="LAST_COMMIT_MESSAGE" value="triple improved" />
   </component>
 </project>

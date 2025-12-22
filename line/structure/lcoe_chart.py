@@ -104,10 +104,26 @@ def draw_lcoe_chart(
     tech_label_mode,
     ylims=(0, 160),
     y_tick_step=20,
+    component_df=None,
+    component_order=None,
+    component_colors=None,
+    area_alpha=0.6,
 ):
-    # ---------------------------
+    """
+    Draw LCOE vs load factor chart.
+
+    Supports:
+    - Curves (renewables)
+    - Horizontal lines (fossil at fixed LF)
+    - Optional stacked areas for LCOE component breakdown
+
+    component_df must be long-form:
+        Country | Year | Tech | Availability | Component | Value
+    """
+
+    # -------------------------------------------------
     # Normalise tech-years
-    # ---------------------------
+    # -------------------------------------------------
     normalised = []
     for s in tech_years:
         tech, year = s["tech"], s["year"]
@@ -120,60 +136,133 @@ def draw_lcoe_chart(
 
     color_lookup = build_color_lookup(tech_years)
 
+    # -------------------------------------------------
+    # Axis setup
+    # -------------------------------------------------
     ax.set_facecolor(BACKGROUND)
     ax.set_xlim(0.05, 1.0)
     ax.margins(x=0)
 
-    # Apply shared y-axis styling
     style_y_axis(ax, ylims, y_tick_step)
 
     LW_MAIN = 2.6
     HLINE_LABEL_X = 1.01
 
+    # -------------------------------------------------
+    # Plot each tech/year
+    # -------------------------------------------------
     for s in normalised:
         tech, year, lf = s["tech"], s["year"], s["lf"]
         color = color_lookup[(tech, year)]
 
+        # =================================================
+        # CURVE TECHS (e.g. Solar+BESS)
+        # =================================================
         if tech_render[tech] == "curve":
-            data = df[(df["Tech"] == tech) & (df["Year"] == year)].sort_values("Availability")
+            data = (
+                df[(df["Tech"] == tech) & (df["Year"] == year)]
+                .sort_values("Availability")
+            )
+
             x_vals = data["Availability"].values
             y_vals = data["LCOE"].values
 
-            ax.plot(x_vals, y_vals, lw=LW_MAIN, color=color)
+            # ---------------------------
+            # Optional stacked areas
+            # ---------------------------
+            if component_df is not None:
+                comp = component_df[
+                    (component_df["Tech"] == tech) &
+                    (component_df["Year"] == year) &
+                    (component_df["Component"] != "Total")
+                ]
+
+                if not comp.empty:
+                    pivot = (
+                        comp
+                        .pivot(
+                            index="Availability",
+                            columns="Component",
+                            values="Value"
+                        )
+                        .sort_index()
+                    )
+
+                    if component_order is None:
+                        component_order = pivot.columns.tolist()
+
+                    if component_colors is None:
+                        raise ValueError(
+                            "component_colors must be provided when component_df is used"
+                        )
+
+                    ax.stackplot(
+                        pivot.index,
+                        [pivot[c] for c in component_order],
+                        colors=[component_colors[c] for c in component_order],
+                        alpha=area_alpha,
+                        zorder=1,
+                    )
+
+            # ---------------------------
+            # LCOE curve
+            # ---------------------------
+            ax.plot(
+                x_vals,
+                y_vals,
+                lw=LW_MAIN,
+                color=color,
+                zorder=3,
+            )
 
             x, y, angle = curve_label_properties_display(ax, x_vals, y_vals)
             label = f"{tech} {year}"
             ha = "center"
 
+        # =================================================
+        # FOSSIL TECHS (horizontal)
+        # =================================================
         else:
             y = fossil_lcoe_at_lf(df, tech, year, lf)
+
             ax.hlines(
-                y, *ax.get_xlim(),
+                y,
+                *ax.get_xlim(),
                 lw=LW_MAIN,
                 color=color,
-                linestyles=(0, (1.2, 1.5))
+                linestyles=(0, (1.2, 1.5)),
+                zorder=2,
             )
+
             x, angle = HLINE_LABEL_X, 0
             label = f"{tech} {year} – {int(lf * 100)}% LF"
             ha = "left"
 
+        # ---------------------------
+        # Label
+        # ---------------------------
         ax.text(
-            x, y, label,
+            x,
+            y,
+            label,
             fontproperties=FONT_SEMI_BOLD,
             fontsize=medium_font,
             color=color,
             rotation=angle,
             va="center",
-            ha=ha
+            ha=ha,
+            zorder=4,
         )
 
-    # X-axis styling (unchanged)
+    # -------------------------------------------------
+    # X-axis styling
+    # -------------------------------------------------
     ax.set_xticks(np.arange(0.1, 1.01, 0.1))
     ax.set_xticklabels(
         [f"{int(t * 100)}%" for t in ax.get_xticks()],
         fontproperties=FONT_REGULAR,
         fontsize=small_font,
-        color=DARK_GREY
+        color=DARK_GREY,
     )
 
 
@@ -278,6 +367,7 @@ def draw_capacity_cluster_chart(
     ylims_duration,
     y_tick_step_duration,
     bar_width=0.025,
+    highlight_avail=None,
 ):
     """
     Clustered capacity chart vs availability.
@@ -285,6 +375,9 @@ def draw_capacity_cluster_chart(
     For each availability:
     - Left axis (MW): stacked Solar + BESS power capacity
     - Right axis (h): storage duration (energy / power)
+
+    Optional:
+    - highlight_avail: float (e.g. 0.75) to emphasise one load factor
     """
 
     ax.cla()
@@ -309,10 +402,15 @@ def draw_capacity_cluster_chart(
     COLOR_BESS_P = "#55A868"
     COLOR_DURATION = "#4C72B0"
 
+    FADE_ALPHA = 0.25
+    FULL_ALPHA = 1.0
+
     # -------------------------------------------------
     # Normalise tech-years
     # -------------------------------------------------
     normalised = [{"tech": s["tech"], "year": s["year"]} for s in tech_years]
+
+    highlight_x = None
 
     # -------------------------------------------------
     # Plot bars
@@ -332,35 +430,46 @@ def draw_capacity_cluster_chart(
         bess_power_mw = data["BESS_Power_MW"].values
         duration_h = data["BESS_Energy_MWh"].values
 
-        # --- Power axis (stacked) ---
-        ax_power.bar(
-            x - offset,
-            solar_mw,
-            width=bar_width,
-            color=COLOR_SOLAR,
-            zorder=3,
-        )
+        for xi, smw, bpmw, dh in zip(x, solar_mw, bess_power_mw, duration_h):
 
-        ax_power.bar(
-            x - offset,
-            bess_power_mw,
-            bottom=solar_mw,
-            width=bar_width,
-            color=COLOR_BESS_P,
-            zorder=3,
-        )
+            is_highlight = highlight_avail is not None and np.isclose(xi, highlight_avail)
+            alpha = FULL_ALPHA if is_highlight or highlight_avail is None else FADE_ALPHA
 
-        # --- Duration axis ---
-        ax_duration.bar(
-            x + offset,
-            duration_h,
-            width=bar_width,
-            color=COLOR_DURATION,
-            zorder=3,
-        )
+            if is_highlight:
+                highlight_x = xi
+
+            # --- Power (stacked) ---
+            ax_power.bar(
+                xi - offset,
+                smw,
+                width=bar_width,
+                color=COLOR_SOLAR,
+                alpha=alpha,
+                zorder=3,
+            )
+
+            ax_power.bar(
+                xi - offset,
+                bpmw,
+                bottom=smw,
+                width=bar_width,
+                color=COLOR_BESS_P,
+                alpha=alpha,
+                zorder=3,
+            )
+
+            # --- Duration ---
+            ax_duration.bar(
+                xi + offset,
+                dh,
+                width=bar_width,
+                color=COLOR_DURATION,
+                alpha=alpha,
+                zorder=3,
+            )
 
     # -------------------------------------------------
-    # Left y-axis (MW) — shared styling, no grid
+    # Left y-axis (MW)
     # -------------------------------------------------
     style_y_axis(
         ax=ax_power,
@@ -369,6 +478,7 @@ def draw_capacity_cluster_chart(
     )
 
     ax_power.grid(False)
+    ax_duration.spines["left"].set_visible(False)
 
     ax_power.set_ylabel(
         "Installed power (MW)",
@@ -379,7 +489,7 @@ def draw_capacity_cluster_chart(
     )
 
     # -------------------------------------------------
-    # Right y-axis (hours) — explicit ticks
+    # Right y-axis (hours)
     # -------------------------------------------------
     y_min, y_max = ylims_duration
     y_ticks = np.arange(y_min, y_max + 1e-9, y_tick_step_duration)
@@ -407,12 +517,35 @@ def draw_capacity_cluster_chart(
         color=DARK_GREY,
     )
 
+    # -------------------------------------------------
+    # Highlight annotation (optional)
+    # -------------------------------------------------
+    if highlight_x is not None:
+        ax_power.axvline(
+            highlight_x,
+            color=DARK_GREY,
+            linestyle=(0, (1.5, 2.5)),
+            linewidth=1.2,
+            zorder=4,
+        )
+
+        ax_power.text(
+            highlight_x,
+            ylims_power[1],
+            f"Load factor: {int(highlight_x * 100)}%",
+            ha="center",
+            va="bottom",
+            fontproperties=FONT_SEMI_BOLD,
+            fontsize=small_font,
+            color=DARK_GREY,
+            zorder=5,
+        )
+
 def draw_generation_stack_chart(
     ax,
     stack_df,
     order,
     ylims=None,
-    daily=False,
     unit="GW",
 ):
     """
@@ -420,8 +553,7 @@ def draw_generation_stack_chart(
 
     - Data expected in MW
     - unit="GW" or "MW" controls display scaling
-    - daily=True → 24-hour profile
-    - daily=False → typical week (168 hours)
+    - X-axis always shows 12 AM and 12 PM anchors
     """
 
     ax.cla()
@@ -486,37 +618,26 @@ def draw_generation_stack_chart(
     )
 
     # ---------------------------
-    # X-axis
+    # X-axis: 12 AM / 12 PM only
     # ---------------------------
-    if daily:
-        desired = {"06:00": "6 AM", "12:00": "12 PM", "18:00": "6 PM"}
-        xticks = [t for t in stack_scaled.index if t.strftime("%H:%M") in desired]
+    hours = stack_scaled.index.hour
+    tick_mask = hours.isin([12])
+    xticks = stack_scaled.index[tick_mask]
 
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(
-            [desired[t.strftime("%H:%M")] for t in xticks],
-            fontproperties=FONT_REGULAR,
-            fontsize=small_font,
-            color=DARK_GREY,
-        )
-    else:
-        hours = stack_scaled.index.hour
-        dows = stack_scaled.index.dayofweek
+    labels = []
+    for t in xticks:
+        labels.append("12 PM")
 
-        tick_mask = (hours == 6) & (dows.isin([0, 2, 4, 6]))
-        xticks = stack_scaled.index[tick_mask]
-        labels = [t.strftime("%a ") + "6AM" for t in xticks]
-
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(
-            labels,
-            fontproperties=FONT_REGULAR,
-            fontsize=small_font,
-            color=DARK_GREY,
-        )
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(
+        labels,
+        fontproperties=FONT_REGULAR,
+        fontsize=small_font,
+        color=DARK_GREY,
+    )
 
     # ---------------------------
-    # Grid
+    # Grid (y only)
     # ---------------------------
     ax.grid(
         axis="y",

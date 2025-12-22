@@ -8,6 +8,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
 
+from line.utils import build_chart_name, mpl_text
 from line.style.config import TECH_RENDER, TECH_LABEL_MODE
 from line.style.styling import (
     BACKGROUND,
@@ -53,6 +54,37 @@ df_lcoe = pd.read_csv(
 df_lcoe = df_lcoe[df_lcoe["Country"] == COUNTRY]
 
 # ===============================================================
+# Load LCOE component breakdown data (for bottom chart only)
+# ===============================================================
+df_components = pd.read_csv(
+    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_breakdowns2.csv"
+)
+
+df_components = df_components[
+    (df_components["Country"] == COUNTRY) &
+    (df_components["Year"] == 2025)
+]
+
+component_order = [
+    "Solar CAPEX",
+    "BESS Energy CAPEX",
+    "BESS Power CAPEX",
+    "Augmentation",
+    "Opex",
+]
+
+component_colors = {
+    "Solar CAPEX": "#FDB813",
+    "BESS Energy CAPEX": "#4C72B0",
+    "BESS Power CAPEX": "#55A868",
+    "Augmentation": "#DD8452",
+    "Opex": "#8C8C8C",
+}
+TECH_YEARS_LCOE_2025 = [
+    {"tech": "Solar+BESS", "year": 2025},
+]
+
+# ===============================================================
 # Load & prepare stack data (precomputed views)
 # ===============================================================
 typical_week_by_avail = load_typical_week_by_availability(
@@ -75,7 +107,7 @@ fig.patch.set_facecolor(BACKGROUND)
 gs = fig.add_gridspec(
     nrows=3,
     ncols=1,
-    height_ratios=[1.2, 1.0, 1.0],
+    height_ratios=[1, 1.0, 1.0],
     left=0.08,
     right=0.80,
     top=0.90,
@@ -148,20 +180,24 @@ ax_mid.set_xlabel(
     labelpad=10,
 )
 
-# --- Bottom: LCOE ---
+# --- Bottom: LCOE (Solar+BESS 2025 with components) ---
 draw_lcoe_chart(
     ax=ax_bot,
     df=df_lcoe,
-    tech_years=TECH_YEARS,
-    default_fossil_lf=DEFAULT_FOSSIL_LF,
+    tech_years=TECH_YEARS_LCOE_2025,
+    default_fossil_lf=None,  # not used (no fossil)
     tech_render=TECH_RENDER,
     tech_label_mode=TECH_LABEL_MODE,
-    ylims=LCOE_YLIMS,
+    ylims=(0, 350),
     y_tick_step=50,
+    component_df=df_components,
+    component_order=component_order,
+    component_colors=component_colors,
+    area_alpha=0.65,
 )
 
 ax_bot.set_title(
-    "Levelised cost of electricity",
+    "Levelised cost of electricity – component breakdown (2025)",
     fontproperties=FONT_SEMI_BOLD,
     fontsize=medium_font,
     color=DARK_GREY,

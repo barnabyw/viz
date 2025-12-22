@@ -14,7 +14,7 @@ from line.style.styling import (
     small_font,
 )
 
-from line.structure.lcoe_chart import draw_capacity_stack_chart  # wherever you put it
+from line.structure.lcoe_chart import draw_capacity_cluster_chart
 
 
 # ======================================================
@@ -58,18 +58,20 @@ fig.subplots_adjust(
     bottom=0.16,
 )
 
-
 # ======================================================
 # Draw chart
 # ======================================================
-draw_capacity_stack_chart(
+draw_capacity_cluster_chart(
     ax=ax,
     df=df,
     tech_years=TECH_YEARS,
-    ylims=ylims,
-    y_tick_step=10
+    ylims_power=(0, 20),
+    y_tick_step_power=10,
+    ylims_duration=(0, 90),
+    y_tick_step_duration=30,
+    bar_width=0.02,
+    highlight_avail=0.75
 )
-
 
 # ======================================================
 # Titles & labels
