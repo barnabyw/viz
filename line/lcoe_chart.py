@@ -43,13 +43,56 @@ def curve_label_properties_display(
 
     return *ax.transData.inverted().transform(p_label), angle
 
+def style_y_axis(
+    ax,
+    ylims,
+    y_tick_step,
+):
+    """
+    Apply standard y-axis styling used across charts.
+    """
+
+    y_min, y_max = ylims
+    ax.set_ylim(y_min, y_max)
+
+    # Generate ticks, then clip strictly to limits
+    y_ticks = np.arange(y_min, y_max + 1e-9, y_tick_step)
+    y_ticks = y_ticks[y_ticks <= y_max]
+
+    # Gridlines
+    ax.hlines(
+        y_ticks,
+        xmin=ax.get_xlim()[0],
+        xmax=ax.get_xlim()[1],
+        color=CLOUD,
+        lw=0.6,
+        zorder=0,
+    )
+
+    # Tick labels
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels(
+        [f"{y:g}" for y in y_ticks],
+        fontproperties=FONT_REGULAR,
+        fontsize=small_font,
+        color=DARK_GREY,
+    )
+
+    # Spine + ticks
+    ax.spines["left"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    ax.tick_params(axis="y", length=0, pad=6)
+
+
 # ===============================================================
 # Main chart function
 # ===============================================================
-def plot_lcoe_chart(
+def draw_lcoe_chart(
+    ax,
     df,
     tech_years,
-    title,
     default_fossil_lf,
     tech_render,
     tech_label_mode,
@@ -69,52 +112,15 @@ def plot_lcoe_chart(
         else:
             normalised.append({"tech": tech, "year": year, "lf": None})
 
-    # ---------------------------
-    # Colours
-    # ---------------------------
     color_lookup = build_color_lookup(tech_years)
 
-    # ---------------------------
-    # Figure
-    # ---------------------------
-    DPI = 100
-    fig, ax = plt.subplots(figsize=(1920 / DPI, 1080 / DPI), dpi=DPI)
-    fig.subplots_adjust(left=0.08, right=0.8, top=0.80, bottom=0.14)
-
-    fig.patch.set_facecolor(BACKGROUND)
     ax.set_facecolor(BACKGROUND)
-
-    fig.text(
-        0.05, 0.91, title,
-        fontproperties=FONT_SEMI_BOLD,
-        fontsize=large_font,
-        ha="left"
-    )
-
-    fig.text(
-        0.05, 0.87,
-        "Levelised cost of electricity ($/MWh)",
-        fontproperties=FONT_REGULAR,
-        fontsize=medium_font,
-        color=DARK_GREY
-    )
-
     ax.set_xlim(0.05, 1.0)
-    ax.set_ylim(*ylims)
     ax.margins(x=0)
 
-    y_min, y_max = ylims
-    y_ticks = np.arange(y_min, y_max + y_tick_step, y_tick_step)
+    # Apply shared y-axis styling
+    style_y_axis(ax, ylims, y_tick_step)
 
-    # ---------------------------
-    # Gridlines
-    # ---------------------------
-    ax.hlines(y_ticks, xmin=ax.get_xlim()[0], xmax=ax.get_xlim()[1], color=CLOUD, lw=0.6, zorder=0
-    )
-
-    # ---------------------------
-    # Plot
-    # ---------------------------
     LW_MAIN = 2.6
     HLINE_LABEL_X = 1.01
 
@@ -123,24 +129,27 @@ def plot_lcoe_chart(
         color = color_lookup[(tech, year)]
 
         if tech_render[tech] == "curve":
-            data = df[(df["Tech"] == tech) & (df["Year"] == year)]
-            data = data.sort_values("Availability")
-
+            data = df[(df["Tech"] == tech) & (df["Year"] == year)].sort_values("Availability")
             x_vals = data["Availability"].values
             y_vals = data["LCOE"].values
 
             ax.plot(x_vals, y_vals, lw=LW_MAIN, color=color)
+
             x, y, angle = curve_label_properties_display(ax, x_vals, y_vals)
             label = f"{tech} {year}"
-
-            horz_anchor = "center"
+            ha = "center"
 
         else:
             y = fossil_lcoe_at_lf(df, tech, year, lf)
-            ax.hlines(y, *ax.get_xlim(), lw=LW_MAIN, color=color, linestyles=(0, (1.2, 1.5))) # dot length, gap length
+            ax.hlines(
+                y, *ax.get_xlim(),
+                lw=LW_MAIN,
+                color=color,
+                linestyles=(0, (1.2, 1.5))
+            )
             x, angle = HLINE_LABEL_X, 0
             label = f"{tech} {year} – {int(lf * 100)}% LF"
-            horz_anchor = "left"
+            ha = "left"
 
         ax.text(
             x, y, label,
@@ -149,50 +158,108 @@ def plot_lcoe_chart(
             color=color,
             rotation=angle,
             va="center",
-            ha=horz_anchor
+            ha=ha
         )
 
+    # X-axis styling (unchanged)
+    ax.set_xticks(np.arange(0.1, 1.01, 0.1))
+    ax.set_xticklabels(
+        [f"{int(t * 100)}%" for t in ax.get_xticks()],
+        fontproperties=FONT_REGULAR,
+        fontsize=small_font,
+        color=DARK_GREY
+    )
+
+
+def draw_capacity_stack_chart(
+    ax,
+    df,
+    tech_years,
+    ylims,
+    y_tick_step,
+):
+    """
+    Stacked capacity bars vs availability.
+    """
+
     # ---------------------------
-    # Axes styling
+    # Normalise tech-years
     # ---------------------------
-    ax.set_xlabel(
-        "Load factor",
+    normalised = []
+    for s in tech_years:
+        normalised.append({
+            "tech": s["tech"],
+            "year": s["year"],
+        })
+
+    ax.set_facecolor(BACKGROUND)
+    ax.set_xlim(0.05, 1.0)
+    ax.margins(x=0)
+
+    # Apply shared y-axis styling
+    style_y_axis(ax, ylims, y_tick_step)
+
+    # ---------------------------
+    # Bar settings
+    # ---------------------------
+    BAR_WIDTH = 0.035
+
+    COLOR_SOLAR = "#FDB813"
+    COLOR_BESS_E = "#4C72B0"
+    COLOR_BESS_P = "#55A868"
+
+    # ---------------------------
+    # Plot bars
+    # ---------------------------
+    for s in normalised:
+        tech, year = s["tech"], s["year"]
+
+        data = (
+            df[(df["Tech"] == tech) & (df["Year"] == year)]
+            .sort_values("Availability")
+        )
+
+        x = data["Availability"].values
+
+        solar = data["Solar_Capacity_MW"].values
+        bess_e = data["BESS_Energy_MWh"].values
+        bess_p = data["BESS_Power_MW"].values
+
+        ax.bar(
+            x,
+            solar,
+            width=BAR_WIDTH,
+            color=COLOR_SOLAR,
+            edgecolor="none",
+            zorder=3,
+        )
+
+        ax.bar(
+            x,
+            bess_e,
+            bottom=solar,
+            width=BAR_WIDTH,
+            color=COLOR_BESS_E,
+            edgecolor="none",
+            zorder=3,
+        )
+
+        ax.bar(
+            x,
+            bess_p,
+            bottom=solar + bess_e,
+            width=BAR_WIDTH,
+            color=COLOR_BESS_P,
+            edgecolor="none",
+            zorder=3,
+        )
+
+    # X-axis styling (same contract)
+    ax.set_xticks(np.arange(0.1, 1.01, 0.1))
+    ax.set_xticklabels(
+        [f"{int(t * 100)}%" for t in ax.get_xticks()],
         fontproperties=FONT_REGULAR,
         fontsize=small_font,
         color=DARK_GREY,
-        labelpad=14,  # ⬅ pushes title down
     )
 
-    # X-axis
-    x_ticks = np.arange(0.1, 1.01, 0.1)
-    ax.set_xticks(x_ticks)
-    ax.set_xticklabels(
-        [f"{int(t * 100)}%" for t in x_ticks],
-        fontproperties=FONT_REGULAR,
-        fontsize=small_font,
-        color=DARK_GREY
-    )
-
-    ax.spines["bottom"].set_color(DARK_GREY)
-    ax.spines["bottom"].set_linewidth(1.2)
-    ax.tick_params(axis="x", length=10, width=1.2, color=DARK_GREY)
-
-    # ---------------------------
-    # Y-axis (labels only)
-    # ---------------------------
-    ax.set_yticks(y_ticks)
-    ax.set_yticklabels(
-        [f"{y}" for y in y_ticks],
-        fontproperties=FONT_REGULAR,
-        fontsize=small_font,
-        color=DARK_GREY
-    )
-
-    ax.spines["left"].set_visible(False)
-    ax.tick_params(axis="y", length=0, pad=6)
-
-    # Remove unused spines
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-    return fig, ax

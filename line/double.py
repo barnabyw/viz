@@ -35,27 +35,45 @@ df = df[df["Country"] == COUNTRY]
 TITLE = mpl_text(TITLE_RAW)
 
 # -------------------------------------------------
-# Figure
+# Figure + layout
 # -------------------------------------------------
 DPI = 100
 fig = plt.figure(figsize=(1920 / DPI, 1080 / DPI), dpi=DPI)
 fig.patch.set_facecolor(BACKGROUND)
 
-ax = fig.add_subplot(1, 1, 1)
-ax.set_facecolor(BACKGROUND)
-
-fig.subplots_adjust(
+gs = fig.add_gridspec(
+    nrows=2,
+    ncols=1,
+    height_ratios=[1, 1],
     left=0.08,
     right=0.8,
     top=0.80,
     bottom=0.14,
+    hspace=0.20, # space between
 )
 
+ax_top = fig.add_subplot(gs[0, 0])
+ax_bottom = fig.add_subplot(gs[1, 0])
+
+ax_top.set_facecolor(BACKGROUND)
+ax_bottom.set_facecolor(BACKGROUND)
+
 # -------------------------------------------------
-# Draw chart
+# Draw charts
 # -------------------------------------------------
 draw_lcoe_chart(
-    ax=ax,
+    ax=ax_top,
+    df=df,
+    tech_years=TECH_YEARS,
+    default_fossil_lf=DEFAULT_FOSSIL_LF,
+    tech_render=TECH_RENDER,
+    tech_label_mode=TECH_LABEL_MODE,
+    ylims=ylims,
+    y_tick_step=50,
+)
+
+draw_lcoe_chart(
+    ax=ax_bottom,
     df=df,
     tech_years=TECH_YEARS,
     default_fossil_lf=DEFAULT_FOSSIL_LF,
@@ -66,7 +84,7 @@ draw_lcoe_chart(
 )
 
 # -------------------------------------------------
-# Titles
+# Titles & labels
 # -------------------------------------------------
 fig.text(
     0.05, 0.91,
@@ -84,7 +102,7 @@ fig.text(
     color=DARK_GREY
 )
 
-ax.set_xlabel(
+ax_bottom.set_xlabel(
     "Load factor",
     fontproperties=FONT_REGULAR,
     fontsize=small_font,
@@ -92,11 +110,14 @@ ax.set_xlabel(
     labelpad=14,
 )
 
+ax_top.set_xticklabels([])
+ax_top.tick_params(axis="x", length=0)
+
 # -------------------------------------------------
 # Save
 # -------------------------------------------------
 name = build_chart_name(COUNTRY, TECH_YEARS)
-output_path = fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\Good charts\video\{name}.png"
+output_path = fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\Good charts\video\{name}_double.png"
 
 fig.savefig(
     output_path,
