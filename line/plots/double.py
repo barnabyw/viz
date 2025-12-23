@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
 
 from line.utils import build_chart_name, mpl_text, draw_dashboard_callout
-from line.style.config import TECH_RENDER, TECH_LABEL_MODE
+from line.style.config import TECH_RENDER, TECH_LABEL_MODE, POSITIVE, NEGATIVE
 from line.style.styling import (
     BACKGROUND,
     FONT_SEMI_BOLD,
@@ -19,7 +19,6 @@ from line.style.styling import (
     medium_font,
     small_font,
 )
-
 from line.structure.lcoe_chart import (
     draw_lcoe_chart,
     draw_generation_stack_chart,
@@ -35,12 +34,12 @@ from line.variable_map import VARIABLE_MAP
 COUNTRY = "Spain"
 TITLE_RAW = f"Optimising costs to meet given load factors with solar and BESS"
 
-AVAIL = 1
+AVAIL = 0.70
 
 year = 2015
 
 TECH_YEARS = [
-    {"tech": "Solar+BESS", "year": 2015},
+    {"tech": "Solar+BESS", "year": year},
 ]
 
 LCOE_YLIMS = (0, 500)
@@ -49,7 +48,7 @@ LCOE_YLIMS = (0, 500)
 # Load LCOE data
 # ===============================================================
 df_lcoe = pd.read_csv(
-    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results.csv"
+    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results_complete.csv"
 )
 df_lcoe = df_lcoe[df_lcoe["Country"] == COUNTRY]
 
@@ -73,7 +72,7 @@ duration_h = row["BESS_Energy_MWh"]
 # Load LCOE component breakdown data (for bottom chart only)
 # ===============================================================
 df_components = pd.read_csv(
-    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_breakdowns2.csv"
+    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_breakdowns_complete.csv"
 )
 
 df_components = df_components[
@@ -145,7 +144,9 @@ draw_generation_stack_chart(
     stack_df=week_df,
     order=["Solar", "Battery Discharge", "Unmet Demand", "Battery Charge", "Curtailment"],
     unit="MW",
-    ylims=(-1,1)
+    ylims=(-0.6,1),
+    positive=POSITIVE,
+    negative=NEGATIVE
 )
 
 ax_top.set_title(
@@ -163,8 +164,8 @@ draw_capacity_cluster_chart(
     ax=ax_mid,
     df=df_lcoe,
     tech_years=TECH_YEARS,
-    max_avail=AVAIL,
-    highlight_avail=AVAIL,
+    #max_avail=AVAIL,
+    #highlight_avail=AVAIL,
     duration_power_ratio=4.0,
     bar_width=0.02,
 )

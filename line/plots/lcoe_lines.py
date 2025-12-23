@@ -17,24 +17,25 @@ from line.style.styling import (
     DARK_GREY, large_font, medium_font, small_font
 )
 
-COUNTRY = "Spain"
+COUNTRY = "India"
 TITLE_RAW = f"{COUNTRY} in 2025: solar and BESS costs have declined fast"
 
 DEFAULT_FOSSIL_LF = [0.7]
 
 TECH_YEARS = [
-    {"tech": "Solar+BESS", "year": 2015},
+    {"tech": "Solar+BESS", "year": 2020},
+    {"tech": "Solar+BESS", "year": 2023, "label_pos": "below"},
     {"tech": "Solar+BESS", "year": 2025},
-    {"tech": "Gas",        "year": 2015},
+    {"tech": "Coal",        "year": 2025, "label_pos": "below", "label_anchor": "start"},
 ]
 
-ylims = (0, 150)
+ylims = (0, 100)
 
 # -------------------------------------------------
 # Load data
 # -------------------------------------------------
 df = pd.read_csv(
-    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results.csv"
+    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results_complete.csv"
 )
 df = df[df["Country"] == COUNTRY]
 

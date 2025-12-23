@@ -17,10 +17,20 @@ from line.style.styling import (
 # Helpers
 # ===============================================================
 def fossil_lcoe_at_lf(df, tech, year, lf):
-    """Uses Availability as load-factor proxy."""
-    subset = df[(df["Tech"] == tech) & (df["Year"] == year)]
-    idx = (subset["Availability"] - lf).abs().idxmin()
-    return subset.loc[idx, "LCOE"]
+    subset = df[
+        (df["Tech"] == tech) &
+        (df["Year"] == year) &
+        (df["Availability"] == lf)
+    ]
+    if subset.empty:
+        raise ValueError(
+            f"No LCOE found for Tech={tech}, Year={year}, Availability={lf}"
+        )
+    if len(subset) > 1:
+        raise ValueError(
+            f"Multiple LCOE rows found for Tech={tech}, Year={year}, Availability={lf}"
+        )
+    return subset.iloc[0]["LCOE"]
 
 def curve_label_properties_display(
     ax,
@@ -29,7 +39,9 @@ def curve_label_properties_display(
     x_anchor=0.62,
     dx=0.05,
     offset_px=18,
+    label_pos="above"
 ):
+
     x = np.asarray(x)
     y = np.asarray(y)
 
@@ -45,7 +57,8 @@ def curve_label_properties_display(
     y_curve = np.interp(x_anchor, x, y)
     p_curve = ax.transData.transform((x_anchor, y_curve))
 
-    p_label = p_curve + np.array([0, offset_px])
+    sign = 1 if label_pos == "above" else -1
+    p_label = p_curve + np.array([0, sign * offset_px])
 
     return *ax.transData.inverted().transform(p_label), angle
 
@@ -122,17 +135,22 @@ def draw_lcoe_chart(
     """
 
     # -------------------------------------------------
-    # Normalise tech-years
+    # Normalise tech-years (PRESERVE all controls)
     # -------------------------------------------------
     normalised = []
     for s in tech_years:
         tech, year = s["tech"], s["year"]
+
         if tech in ["Gas", "Coal"]:
             lfs = s.get("lf", default_fossil_lf)
             for lf in lfs:
-                normalised.append({"tech": tech, "year": year, "lf": lf})
+                entry = s.copy()
+                entry["lf"] = lf
+                normalised.append(entry)
         else:
-            normalised.append({"tech": tech, "year": year, "lf": None})
+            entry = s.copy()
+            entry["lf"] = None
+            normalised.append(entry)
 
     color_lookup = build_color_lookup(tech_years)
 
@@ -146,7 +164,12 @@ def draw_lcoe_chart(
     style_y_axis(ax, ylims, y_tick_step)
 
     LW_MAIN = 2.6
-    HLINE_LABEL_X = 1.01
+
+    # Precompute proportional offset
+    y_min, y_max = ylims
+    y_range = y_max - y_min
+    OFFSET_FRAC = 0.017
+    y_offset = OFFSET_FRAC * y_range
 
     # -------------------------------------------------
     # Plot each tech/year
@@ -155,8 +178,14 @@ def draw_lcoe_chart(
         tech, year, lf = s["tech"], s["year"], s["lf"]
         color = color_lookup[(tech, year)]
 
+        label_pos = s.get("label_pos", "above")     # above | below
+        label_anchor = s.get("label_anchor", "end") # start | end (flat only)
+
+        sign = 1 if label_pos == "above" else -1
+        va = "bottom" if label_pos == "above" else "top"
+
         # =================================================
-        # CURVE TECHS (e.g. Solar+BESS)
+        # CURVE TECHS
         # =================================================
         if tech_render[tech] == "curve":
             data = (
@@ -167,9 +196,7 @@ def draw_lcoe_chart(
             x_vals = data["Availability"].values
             y_vals = data["LCOE"].values
 
-            # ---------------------------
             # Optional stacked areas
-            # ---------------------------
             if component_df is not None:
                 comp = component_df[
                     (component_df["Tech"] == tech) &
@@ -204,9 +231,7 @@ def draw_lcoe_chart(
                         zorder=1,
                     )
 
-            # ---------------------------
             # LCOE curve
-            # ---------------------------
             ax.plot(
                 x_vals,
                 y_vals,
@@ -215,9 +240,32 @@ def draw_lcoe_chart(
                 zorder=3,
             )
 
-            x, y, angle = curve_label_properties_display(ax, x_vals, y_vals)
+            x, y, angle = curve_label_properties_display(
+                ax,
+                x_vals,
+                y_vals,
+                label_pos=label_pos,
+            )
             label = f"{tech} {year}"
-            ha = "center"
+
+            curve_below_offset_frac = 0.017
+            curve_below_offset = curve_below_offset_frac * (ylims[1] - ylims[0])
+
+            if label_pos == "below":
+                y = y - curve_below_offset
+
+            ax.text(
+                x,
+                y,
+                label,
+                fontproperties=FONT_SEMI_BOLD,
+                fontsize=medium_font,
+                color=color,
+                rotation=angle,
+                va="center",
+                ha="center",
+                zorder=4,
+            )
 
         # =================================================
         # FOSSIL TECHS (horizontal)
@@ -234,25 +282,27 @@ def draw_lcoe_chart(
                 zorder=2,
             )
 
-            x, angle = HLINE_LABEL_X, 0
-            label = f"{tech} {year} – {int(lf * 100)}% LF"
-            ha = "left"
+            if label_anchor == "start":
+                x = ax.get_xlim()[0]
+                ha = "left"
+            else:
+                x = ax.get_xlim()[1]
+                ha = "right"
 
-        # ---------------------------
-        # Label
-        # ---------------------------
-        ax.text(
-            x,
-            y,
-            label,
-            fontproperties=FONT_SEMI_BOLD,
-            fontsize=medium_font,
-            color=color,
-            rotation=angle,
-            va="center",
-            ha=ha,
-            zorder=4,
-        )
+            label = f"{tech} {year} – {int(lf * 100)}% LF"
+
+            ax.text(
+                x,
+                y + sign * y_offset,
+                label,
+                fontproperties=FONT_SEMI_BOLD,
+                fontsize=medium_font,
+                color=color,
+                rotation=0,
+                va=va,
+                ha=ha,
+                zorder=4,
+            )
 
     # -------------------------------------------------
     # X-axis styling
@@ -264,7 +314,6 @@ def draw_lcoe_chart(
         fontsize=small_font,
         color=DARK_GREY,
     )
-
 
 def draw_capacity_stack_chart(
     ax,
@@ -483,8 +532,8 @@ def draw_capacity_cluster_chart(
     # -------------------------------------------------
     # Axis scaling (invisible)
     # -------------------------------------------------
-    ax_power.set_ylim(0, max_power_seen * 2)
-    ax_duration.set_ylim(0, max_power_seen * duration_power_ratio)
+    ax_power.set_ylim(0, max_power_seen * 1.75)
+    ax_duration.set_ylim(0, max_power_seen * 1.75 * duration_power_ratio)
 
     # -------------------------------------------------
     # X-axis (unchanged)
@@ -497,12 +546,16 @@ def draw_capacity_cluster_chart(
         color=DARK_GREY,
     )
 
+    label_pad = 0.9
+
     # -------------------------------------------------
     # Highlight annotation (optional)
     # -------------------------------------------------
     if highlight_x is not None:
         ax_power.axvline(
             highlight_x,
+            ymin=0.0,
+            ymax=label_pad,
             color=DARK_GREY,
             linestyle=(0, (1.5, 2.5)),
             linewidth=1.2,
@@ -511,9 +564,9 @@ def draw_capacity_cluster_chart(
 
         ax_power.text(
             highlight_x,
-            ax_power.get_ylim()[1],
-            f"Load factor: {int(highlight_x * 100)}%",
-            ha="right",
+            ax_power.get_ylim()[1]*label_pad-0.05,
+            f"Load factor: {int(highlight_x * 100)}% ",
+            ha="center",
             va="bottom",
             fontproperties=FONT_SEMI_BOLD,
             fontsize=small_font,
@@ -527,9 +580,10 @@ def draw_generation_stack_chart(
     order,
     ylims=(0,1.2),
     unit="GW",
+    positive=None,
+    negative=None
 ):
-    POSITIVE = ["Solar", "Battery Discharge", "Unmet Demand"]
-    NEGATIVE = ["Battery Charge", "Curtailment"]
+
 
     """
     Stacked generation chart.
@@ -579,8 +633,8 @@ def draw_generation_stack_chart(
     # ---------------------------
     ax.stackplot(
         stack_scaled.index,
-        [stack_scaled[c] for c in POSITIVE if c in stack_scaled.columns],
-        colors=[STACK_COLOURS[c] for c in POSITIVE if c in stack_scaled.columns],
+        [stack_scaled[c] for c in positive if c in stack_scaled.columns],
+        colors=[STACK_COLOURS[c] for c in positive if c in stack_scaled.columns],
         alpha=0.95,
         zorder=2,
     )
@@ -588,22 +642,29 @@ def draw_generation_stack_chart(
     # ---------------------------
     # Negative stack (below zero)
     # ---------------------------
-    ax.stackplot(
-        stack_scaled.index,
-        [stack_scaled[c] for c in NEGATIVE if c in stack_scaled.columns],
-        colors=[STACK_COLOURS[c] for c in NEGATIVE if c in stack_scaled.columns],
-        alpha=0.95,
-        zorder=2,
-    )
+    if negative:
+        ax.stackplot(
+            stack_scaled.index,
+            [stack_scaled[c] for c in negative if c in stack_scaled.columns],
+            colors=[STACK_COLOURS[c] for c in negative if c in stack_scaled.columns],
+            alpha=0.95,
+            zorder=2,
+        )
+
+    # Ensure x-axis elements render above stacks
+    ax.spines["bottom"].set_zorder(5)
+    ax.xaxis.set_zorder(5)
 
     # ---------------------------
     # Y-axis (only 0 and 1)
     # ---------------------------
     ax.set_ylim(*ylims)
 
-    ax.set_yticks([-1, 0, 1])
+    y_min, y_max = ax.get_ylim()  # or ylims
+
+    ax.set_yticks([y_min, 0, y_max])
     ax.set_yticklabels(
-        [f"-1 {unit_label}", f"0", f"1 {unit_label}"],
+        [f"{y_min:g} {unit_label}", "0", f"{y_max:g} {unit_label}"],
         fontproperties=FONT_REGULAR,
         fontsize=small_font,
         color=DARK_GREY,
@@ -616,9 +677,20 @@ def draw_generation_stack_chart(
     tick_mask = hours.isin([12])
     xticks = stack_scaled.index[tick_mask]
 
+
     labels = []
     for t in xticks:
         labels.append("12 PM")
+
+    # ---------------------------
+    # Move x-axis to y = 0
+    # ---------------------------
+    ax.spines["bottom"].set_position(("data", 0))
+    ax.spines["bottom"].set_color(DARK_GREY)
+    ax.spines["bottom"].set_linewidth(0.8)
+
+    ax.xaxis.set_ticks_position("bottom")
+    ax.xaxis.set_label_position("bottom")
 
     ax.set_xticks(xticks)
     ax.set_xticklabels(

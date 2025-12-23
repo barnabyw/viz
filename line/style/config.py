@@ -10,3 +10,5 @@ TECH_LABEL_MODE = {
     "Gas": "end",
     "Coal": "end",
 }
+POSITIVE = ["Solar", "Battery Discharge", "Unmet Demand"]
+NEGATIVE = ["Battery Charge", "Curtailment"]
