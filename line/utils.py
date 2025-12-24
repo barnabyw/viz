@@ -1,5 +1,8 @@
 from collections import defaultdict
 
+from line.style.styling import DARK_GREY
+
+
 def build_chart_name(country, tech_years):
     parts = [country.lower().replace(" ", "_")]
 
@@ -53,6 +56,7 @@ def draw_dashboard_callout(
         Vertical center in figure coordinates
     rows : list of dicts
         Each dict: {"label": str, "value": str}
+        Optional: {"color": str}
     """
 
     n = len(rows)
@@ -61,7 +65,10 @@ def draw_dashboard_callout(
     for offset, row in zip(offsets, rows):
         y = y_center - offset * row_gap
 
-        # Label (small)
+        # Resolve colour (fallback to existing behaviour)
+        row_color = row.get("color", color)
+
+        # Label (small) — UNCHANGED
         fig.text(
             x,
             y,
@@ -70,10 +77,10 @@ def draw_dashboard_callout(
             va="bottom",
             fontproperties=label_font,
             fontsize=label_size,
-            color=color,
+            color=DARK_GREY,
         )
 
-        # Value (large)
+        # Value (large) — UNCHANGED
         fig.text(
             x,
             y - value_offset,
@@ -82,5 +89,6 @@ def draw_dashboard_callout(
             va="top",
             fontproperties=value_font,
             fontsize=value_size,
-            color=color,
+            color=row_color,
         )
+

@@ -412,9 +412,10 @@ def draw_capacity_cluster_chart(
     df,
     tech_years,
     max_avail=None,
-    duration_power_ratio=4.0,   # hours per MW (axis scaling only)
+    duration_power_ratio=4.0,
     bar_width=0.025,
     highlight_avail=None,
+    colors=None,   # NEW
 ):
     """
     Clustered capacity chart vs availability.
@@ -436,6 +437,7 @@ def draw_capacity_cluster_chart(
 
     ax_power = ax
     ax_duration = ax.twinx()
+    ax_duration.patch.set_alpha(0)
 
     # Hide vertical + top spines, keep bottom (x-axis line)
     for spine in ["top", "right", "left"]:
@@ -453,9 +455,19 @@ def draw_capacity_cluster_chart(
     # -------------------------------------------------
     # Colours
     # -------------------------------------------------
-    COLOR_SOLAR = "#FDB813"
-    COLOR_BESS_P = "#55A868"
-    COLOR_DURATION = "#4C72B0"
+
+    DEFAULT_COLORS = {
+        "Solar": "#FDB813",
+        "BESS Power": "#55A868",
+        "BESS Energy": "#4C72B0",
+    }
+
+    if colors is None:
+        colors = DEFAULT_COLORS
+
+    COLOR_SOLAR = colors["Solar"]
+    COLOR_BESS_P = colors["BESS Power"]
+    COLOR_DURATION = colors["BESS Energy"]
 
     FADE_ALPHA = 0.25
     FULL_ALPHA = 1.0

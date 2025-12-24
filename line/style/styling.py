@@ -54,13 +54,32 @@ STACK_COLOURS = {
     "Battery Discharge": "#0F9ED5",
     "Nuclear": "#F2F2F2",
     "Wind": "#E0E0E0",
-    "Battery Charge": "#CDCDCD",
+    "Battery Charge": "#8FD3F4",   # lighter blue
+    "Curtailment": "#FFE08A",      # lighter yellow
     "Other": "#D6D6D6",
     "Imports": "#BBBBBB",
     "Hydro": "#A7A7A7",
     "Gas": "#919191",
     "Unmet Demand": "#BBBBBB",
-    "Curtailment": "#ef3b2c"
+}
+
+component_colors = {
+    # Direct inheritance from stack
+    "Solar CAPEX": STACK_COLOURS["Solar"],
+    "BESS Energy CAPEX": STACK_COLOURS["Battery Discharge"],
+
+    # Variant of BESS colour
+    "BESS Power CAPEX": "#00316E",
+
+    # Cost-only components (explicit semantic colours)
+    "Augmentation": "#DD8452",   # pink / salmon
+    "Opex": "#E377C2",           # pink
+}
+
+capacity_colors = {
+    "Solar": STACK_COLOURS["Solar"],
+    "BESS Energy": STACK_COLOURS["Battery Discharge"],
+    "BESS Power": component_colors["BESS Power CAPEX"]
 }
 
 CLEAN_CMAP = mcolors.LinearSegmentedColormap.from_list(
