@@ -5,12 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="pre refactor">
-      <change afterPath="$PROJECT_DIR$/line/animation/animate_dash.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/animation/animate_dash.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/animation/animate_dash.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/plots/double.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/double.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/plots/lcoe_lines_areas.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/lcoe_lines_areas.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/structure/lcoe_chart.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/structure/lcoe_chart.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/style/styling.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/styling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,33 +46,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.animate_dash.executor": "Run",
-    "Python.animation.executor": "Run",
-    "Python.api.executor": "Run",
-    "Python.config.executor": "Run",
-    "Python.data_prep.executor": "Run",
-    "Python.double.executor": "Run",
-    "Python.lcoe_chart.executor": "Run",
-    "Python.lcoe_lines.executor": "Run",
-    "Python.lcoe_lines_areas.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.main_monthly.executor": "Run",
-    "Python.main_trailing.executor": "Run",
-    "Python.plot.executor": "Run",
-    "Python.plotting.executor": "Run",
-    "Python.records.executor": "Run",
-    "Python.stack.executor": "Run",
-    "Python.variable_map.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "settings.editor.selected.configurable": "preferences.lookFeel"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.animate_dash.executor&quot;: &quot;Run&quot;,
+    &quot;Python.animation.executor&quot;: &quot;Run&quot;,
+    &quot;Python.api.executor&quot;: &quot;Run&quot;,
+    &quot;Python.config.executor&quot;: &quot;Run&quot;,
+    &quot;Python.data_prep.executor&quot;: &quot;Run&quot;,
+    &quot;Python.double.executor&quot;: &quot;Run&quot;,
+    &quot;Python.lcoe_chart.executor&quot;: &quot;Run&quot;,
+    &quot;Python.lcoe_lines.executor&quot;: &quot;Run&quot;,
+    &quot;Python.lcoe_lines_areas.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main_monthly.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main_trailing.executor&quot;: &quot;Run&quot;,
+    &quot;Python.plot.executor&quot;: &quot;Run&quot;,
+    &quot;Python.plotting.executor&quot;: &quot;Run&quot;,
+    &quot;Python.records.executor&quot;: &quot;Run&quot;,
+    &quot;Python.stack.executor&quot;: &quot;Run&quot;,
+    &quot;Python.variable_map.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\barna\PycharmProjects\viz\line" />

@@ -66,6 +66,7 @@ def style_y_axis(
     ax,
     ylims,
     y_tick_step,
+    side="left"
 ):
     """
     Apply standard y-axis styling used across charts.
@@ -89,6 +90,10 @@ def style_y_axis(
     )
 
     # Tick labels
+    # Optional: remove zero tick on right axis
+    if side == "right":
+        y_ticks = y_ticks[y_ticks != 0]
+
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(
         [f"{y:g}" for y in y_ticks],
@@ -98,9 +103,27 @@ def style_y_axis(
     )
 
     # Spine + ticks
-    ax.spines["left"].set_visible(False)
     ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+
+    if side == "right":
+        ax.spines["left"].set_visible(False)
+        ax.spines["right"].set_visible(True)
+
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+
+        ax.spines["right"].set_color(DARK_GREY)
+        ax.spines["right"].set_linewidth(0.8)
+
+    else:  # left (default)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(True)
+
+        ax.yaxis.tick_left()
+        ax.yaxis.set_label_position("left")
+
+        ax.spines["left"].set_color(DARK_GREY)
+        ax.spines["left"].set_linewidth(0.8)
 
     ax.tick_params(axis="y", length=0, pad=6)
 
@@ -121,6 +144,7 @@ def draw_lcoe_chart(
     component_order=None,
     component_colors=None,
     area_alpha=0.6,
+    right_axis=False
 ):
     """
     Draw LCOE vs load factor chart.
@@ -161,7 +185,7 @@ def draw_lcoe_chart(
     ax.set_xlim(0.05, 1.0)
     ax.margins(x=0)
 
-    style_y_axis(ax, ylims, y_tick_step)
+    style_y_axis(ax, ylims, y_tick_step, "right" if right_axis else "left")
 
     LW_MAIN = 2.6
 
@@ -315,6 +339,8 @@ def draw_lcoe_chart(
         color=DARK_GREY,
     )
 
+    ax.spines["left"].set_visible(False)
+
 def draw_capacity_stack_chart(
     ax,
     df,
@@ -416,6 +442,7 @@ def draw_capacity_cluster_chart(
     bar_width=0.025,
     highlight_avail=None,
     colors=None,   # NEW
+    ref_xline_label = False
 ):
     """
     Clustered capacity chart vs availability.
@@ -428,6 +455,11 @@ def draw_capacity_cluster_chart(
     """
 
     ax.cla()
+
+    # Remove any existing twin axes
+    for other_ax in ax.figure.axes:
+        if other_ax is not ax and other_ax.get_shared_x_axes().joined(ax, other_ax):
+            other_ax.remove()
 
     # -------------------------------------------------
     # Base styling
@@ -503,7 +535,10 @@ def draw_capacity_cluster_chart(
         for xi, smw, bpmw, dh in zip(x, solar_mw, bess_power_mw, duration_h):
 
             is_highlight = highlight_avail is not None and np.isclose(xi, highlight_avail)
-            alpha = FULL_ALPHA if is_highlight or highlight_avail is None else FADE_ALPHA
+            is_dimmed = highlight_avail is not None and not is_highlight
+
+            power_alpha = FULL_ALPHA if not is_dimmed else FADE_ALPHA
+            duration_alpha = FULL_ALPHA if not is_dimmed else FADE_ALPHA * 0.6
 
             if is_highlight:
                 highlight_x = xi
@@ -512,12 +547,13 @@ def draw_capacity_cluster_chart(
             max_power_seen = max(max_power_seen, total_power)
 
             # --- Power (stacked) ---
+            # --- Power (stacked) ---
             ax_power.bar(
                 xi - offset,
                 smw,
                 width=bar_width,
                 color=COLOR_SOLAR,
-                alpha=alpha,
+                alpha=power_alpha,
                 zorder=3,
             )
 
@@ -527,17 +563,27 @@ def draw_capacity_cluster_chart(
                 bottom=smw,
                 width=bar_width,
                 color=COLOR_BESS_P,
-                alpha=alpha,
+                alpha=power_alpha,
                 zorder=3,
             )
 
-            # --- Duration (scaled via ratio) ---
+            # --- Duration ---
             ax_duration.bar(
                 xi + offset,
                 dh,
                 width=bar_width,
                 color=COLOR_DURATION,
-                alpha=alpha,
+                alpha=duration_alpha,
+                zorder=3,
+            )
+
+            # --- Duration ---
+            ax_duration.bar(
+                xi + offset,
+                dh,
+                width=bar_width,
+                color=COLOR_DURATION,
+                alpha=duration_alpha,
                 zorder=3,
             )
 
@@ -546,6 +592,40 @@ def draw_capacity_cluster_chart(
     # -------------------------------------------------
     ax_power.set_ylim(0, max_power_seen * 1.75)
     ax_duration.set_ylim(0, max_power_seen * 1.75 * duration_power_ratio)
+
+    REF_POWER_MW = 1.0
+
+    # --- Reference system lines ---
+    ax_power.axhline(
+        REF_POWER_MW,
+        color=DARK_GREY,
+        lw=1.2,
+        linestyle=(0, (2, 2)),
+        alpha=0.8,
+        zorder=2,
+    )
+
+    x_left = ax_power.get_xlim()[0]
+
+    if ref_xline_label:
+        ax_power.text(
+            x_left,
+            REF_POWER_MW,
+            f"{REF_POWER_MW} MW/{REF_POWER_MW*duration_power_ratio} MWh",
+            ha="left",
+            va="bottom",
+            fontproperties=FONT_SEMI_BOLD,
+            fontsize=small_font,
+            color=DARK_GREY,
+            zorder=5,
+            clip_on=False,
+            bbox=dict(
+                boxstyle="round,pad=0.25",
+                facecolor=BACKGROUND,
+                edgecolor="none",
+                alpha=0.6,
+            ),
+        )
 
     # -------------------------------------------------
     # X-axis (unchanged)
@@ -577,7 +657,7 @@ def draw_capacity_cluster_chart(
         ax_power.text(
             highlight_x,
             ax_power.get_ylim()[1]*label_pad-0.05,
-            f"Load factor: {int(highlight_x * 100)}% ",
+            f"{int(highlight_x * 100)}%",
             ha="center",
             va="bottom",
             fontproperties=FONT_SEMI_BOLD,
@@ -593,7 +673,8 @@ def draw_generation_stack_chart(
     ylims=(0,1.2),
     unit="GW",
     positive=None,
-    negative=None
+    negative=None,
+    right_axis=False
 ):
 
 
@@ -614,6 +695,10 @@ def draw_generation_stack_chart(
     ax.margins(x=0)
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+
+    if right_axis:
+        ax.spines["right"].set_visible(True)
 
     # ---------------------------
     # Ensure all ordered techs exist
@@ -681,6 +766,12 @@ def draw_generation_stack_chart(
         fontsize=small_font,
         color=DARK_GREY,
     )
+
+    if right_axis:
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+        ax.spines["right"].set_color(DARK_GREY)
+        ax.spines["right"].set_linewidth(0.8)
 
     # ---------------------------
     # X-axis: 12 AM / 12 PM only

@@ -41,7 +41,7 @@ anim = FuncAnimation(
     repeat=True,
 )
 
-output = r"C:\Users\barna\OneDrive\Documents\Solar_BESS\Good charts\video\availability_loop.mp4"
+output = r"C:\Users\barna\OneDrive\Documents\Solar_BESS\Good charts\video\availability_loop2.mp4"
 
 anim.save(
     output,

@@ -26,6 +26,7 @@ from line.style.styling import (
     large_font,
     medium_font,
     small_font,
+    component_colors
 )
 
 # -------------------------------------------------
@@ -76,14 +77,6 @@ component_order = [
     "Augmentation",
     "Opex",
 ]
-
-component_colors = {
-    "Solar CAPEX": "#FDB813",
-    "BESS Energy CAPEX": "#4C72B0",
-    "BESS Power CAPEX": "#55A868",
-    "Augmentation": "#DD8452",
-    "Opex": "#8C8C8C",
-}
 
 TITLE = mpl_text(TITLE_RAW)
 
