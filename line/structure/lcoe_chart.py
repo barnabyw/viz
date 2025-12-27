@@ -1,132 +1,13 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
 import sys
 from pathlib import Path
+
+from line.style.config import OTHER_LINE_ALPHA, LINE_WEIGHT
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from line.style.styling import (
-    FONT_REGULAR, FONT_MEDIUM, FONT_SEMI_BOLD,
-    DARK_GREY, CLOUD, BACKGROUND, build_color_lookup, small_font, medium_font, large_font, STACK_COLOURS
-)
-
-# ===============================================================
-# Helpers
-# ===============================================================
-def fossil_lcoe_at_lf(df, tech, year, lf):
-    subset = df[
-        (df["Tech"] == tech) &
-        (df["Year"] == year) &
-        (df["Availability"] == lf)
-    ]
-    if subset.empty:
-        raise ValueError(
-            f"No LCOE found for Tech={tech}, Year={year}, Availability={lf}"
-        )
-    if len(subset) > 1:
-        raise ValueError(
-            f"Multiple LCOE rows found for Tech={tech}, Year={year}, Availability={lf}"
-        )
-    return subset.iloc[0]["LCOE"]
-
-def curve_label_properties_display(
-    ax,
-    x,
-    y,
-    x_anchor=0.62,
-    dx=0.05,
-    offset_px=18,
-    label_pos="above"
-):
-
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    x1, x2 = x_anchor - dx, x_anchor + dx
-    y1 = np.interp(x1, x, y)
-    y2 = np.interp(x2, x, y)
-
-    p1 = ax.transData.transform((x1, y1))
-    p2 = ax.transData.transform((x2, y2))
-
-    angle = np.degrees(np.arctan2(p2[1] - p1[1], p2[0] - p1[0]))
-
-    y_curve = np.interp(x_anchor, x, y)
-    p_curve = ax.transData.transform((x_anchor, y_curve))
-
-    sign = 1 if label_pos == "above" else -1
-    p_label = p_curve + np.array([0, sign * offset_px])
-
-    return *ax.transData.inverted().transform(p_label), angle
-
-def style_y_axis(
-    ax,
-    ylims,
-    y_tick_step,
-    side="left"
-):
-    """
-    Apply standard y-axis styling used across charts.
-    """
-
-    y_min, y_max = ylims
-    ax.set_ylim(y_min, y_max)
-
-    # Generate ticks, then clip strictly to limits
-    y_ticks = np.arange(y_min, y_max + 1e-9, y_tick_step)
-    y_ticks = y_ticks[y_ticks <= y_max]
-
-    # Gridlines
-    ax.hlines(
-        y_ticks,
-        xmin=ax.get_xlim()[0],
-        xmax=ax.get_xlim()[1],
-        color=CLOUD,
-        lw=0.6,
-        zorder=0,
-    )
-
-    # Tick labels
-    # Optional: remove zero tick on right axis
-    if side == "right":
-        y_ticks = y_ticks[y_ticks != 0]
-
-    ax.set_yticks(y_ticks)
-    ax.set_yticklabels(
-        [f"{y:g}" for y in y_ticks],
-        fontproperties=FONT_REGULAR,
-        fontsize=small_font,
-        color=DARK_GREY,
-    )
-
-    # Spine + ticks
-    ax.spines["top"].set_visible(False)
-
-    if side == "right":
-        ax.spines["left"].set_visible(False)
-        ax.spines["right"].set_visible(True)
-
-        ax.yaxis.tick_right()
-        ax.yaxis.set_label_position("right")
-
-        ax.spines["right"].set_color(DARK_GREY)
-        ax.spines["right"].set_linewidth(0.8)
-
-    else:  # left (default)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(True)
-
-        ax.yaxis.tick_left()
-        ax.yaxis.set_label_position("left")
-
-        ax.spines["left"].set_color(DARK_GREY)
-        ax.spines["left"].set_linewidth(0.8)
-
-    ax.tick_params(axis="y", length=0, pad=6)
-
+from line.structure.helpers import *
 
 # ===============================================================
 # Main chart function
@@ -134,35 +15,82 @@ def style_y_axis(
 def draw_lcoe_chart(
     ax,
     df,
-    tech_years,
+    line_tech_years,
     default_fossil_lf,
     tech_render,
     tech_label_mode,
     ylims=(0, 160),
     y_tick_step=20,
     component_df=None,
+    component_tech_years=None,
     component_order=None,
     component_colors=None,
     area_alpha=0.6,
-    right_axis=False
+    right_axis=False,
 ):
     """
     Draw LCOE vs load factor chart.
 
-    Supports:
-    - Curves (renewables)
-    - Horizontal lines (fossil at fixed LF)
-    - Optional stacked areas for LCOE component breakdown
-
-    component_df must be long-form:
-        Country | Year | Tech | Availability | Component | Value
+    Lines and component areas are driven independently:
+    - line_tech_years: which tech-years get curves / lines + labels
+    - component_tech_years: which tech-years get stacked component areas
     """
 
     # -------------------------------------------------
-    # Normalise tech-years (PRESERVE all controls)
+    # Axis setup
+    # -------------------------------------------------
+    ax.set_facecolor(BACKGROUND)
+    ax.set_xlim(0.05, 1.0)
+    ax.margins(x=0)
+
+    style_y_axis(ax, ylims, y_tick_step, "right" if right_axis else "left")
+
+    # -------------------------------------------------
+    # Draw COMPONENT AREAS (independent of lines)
+    # -------------------------------------------------
+    if component_df is not None and component_tech_years:
+        for s in component_tech_years:
+            tech, year = s["tech"], s["year"]
+
+            comp = component_df[
+                (component_df["Tech"] == tech) &
+                (component_df["Year"] == year) &
+                (component_df["Component"] != "Total")
+            ]
+
+            if comp.empty:
+                continue
+
+            pivot = (
+                comp
+                .pivot(
+                    index="Availability",
+                    columns="Component",
+                    values="Value"
+                )
+                .sort_index()
+            )
+
+            order = component_order or pivot.columns.tolist()
+
+            if component_colors is None:
+                raise ValueError(
+                    "component_colors must be provided when component_df is used"
+                )
+
+            ax.stackplot(
+                pivot.index,
+                [pivot[c] for c in order],
+                colors=[component_colors[c] for c in order],
+                alpha=area_alpha,
+                zorder=1,
+            )
+
+    # -------------------------------------------------
+    # Normalise LINE tech-years
     # -------------------------------------------------
     normalised = []
-    for s in tech_years:
+    for s in line_tech_years:
         tech, year = s["tech"], s["year"]
 
         if tech in ["Gas", "Coal"]:
@@ -176,157 +104,62 @@ def draw_lcoe_chart(
             entry["lf"] = None
             normalised.append(entry)
 
-    color_lookup = build_color_lookup(tech_years)
-
-    # -------------------------------------------------
-    # Axis setup
-    # -------------------------------------------------
-    ax.set_facecolor(BACKGROUND)
-    ax.set_xlim(0.05, 1.0)
-    ax.margins(x=0)
-
-    style_y_axis(ax, ylims, y_tick_step, "right" if right_axis else "left")
-
+    color_lookup = build_color_lookup(line_tech_years)
     LW_MAIN = 2.6
 
-    # Precompute proportional offset
-    y_min, y_max = ylims
-    y_range = y_max - y_min
-    OFFSET_FRAC = 0.017
-    y_offset = OFFSET_FRAC * y_range
-
     # -------------------------------------------------
-    # Plot each tech/year
+    # Draw LINES + LABELS
     # -------------------------------------------------
+    highlight_mode = any(s.get("highlight", False) for s in line_tech_years)
     for s in normalised:
         tech, year, lf = s["tech"], s["year"], s["lf"]
         color = color_lookup[(tech, year)]
 
-        label_pos = s.get("label_pos", "above")     # above | below
-        label_anchor = s.get("label_anchor", "end") # start | end (flat only)
+        is_highlight = s.get("highlight", False)
+        alpha = 1.0 if (not highlight_mode or is_highlight) else OTHER_LINE_ALPHA
 
-        sign = 1 if label_pos == "above" else -1
-        va = "bottom" if label_pos == "above" else "top"
-
-        # =================================================
-        # CURVE TECHS
-        # =================================================
-        if tech_render[tech] == "curve":
+        # -------- curve techs --------
+        if tech_render.get(tech) == "curve":
             data = (
                 df[(df["Tech"] == tech) & (df["Year"] == year)]
                 .sort_values("Availability")
             )
 
-            x_vals = data["Availability"].values
-            y_vals = data["LCOE"].values
+            if data.empty:
+                continue
 
-            # Optional stacked areas
-            if component_df is not None:
-                comp = component_df[
-                    (component_df["Tech"] == tech) &
-                    (component_df["Year"] == year) &
-                    (component_df["Component"] != "Total")
-                ]
-
-                if not comp.empty:
-                    pivot = (
-                        comp
-                        .pivot(
-                            index="Availability",
-                            columns="Component",
-                            values="Value"
-                        )
-                        .sort_index()
-                    )
-
-                    if component_order is None:
-                        component_order = pivot.columns.tolist()
-
-                    if component_colors is None:
-                        raise ValueError(
-                            "component_colors must be provided when component_df is used"
-                        )
-
-                    ax.stackplot(
-                        pivot.index,
-                        [pivot[c] for c in component_order],
-                        colors=[component_colors[c] for c in component_order],
-                        alpha=area_alpha,
-                        zorder=1,
-                    )
-
-            # LCOE curve
             ax.plot(
-                x_vals,
-                y_vals,
-                lw=LW_MAIN,
+                data["Availability"].values,
+                data["LCOE"].values,
                 color=color,
                 zorder=3,
+                alpha=alpha,
             )
 
-            x, y, angle = curve_label_properties_display(
-                ax,
-                x_vals,
-                y_vals,
-                label_pos=label_pos,
-            )
-            label = f"{tech} {year}"
-
-            curve_below_offset_frac = 0.017
-            curve_below_offset = curve_below_offset_frac * (ylims[1] - ylims[0])
-
-            if label_pos == "below":
-                y = y - curve_below_offset
-
-            ax.text(
-                x,
-                y,
-                label,
-                fontproperties=FONT_SEMI_BOLD,
-                fontsize=medium_font,
-                color=color,
-                rotation=angle,
-                va="center",
-                ha="center",
-                zorder=4,
-            )
-
-        # =================================================
-        # FOSSIL TECHS (horizontal)
-        # =================================================
+        # -------- fossil techs --------
         else:
             y = fossil_lcoe_at_lf(df, tech, year, lf)
 
             ax.hlines(
                 y,
                 *ax.get_xlim(),
-                lw=LW_MAIN,
                 color=color,
                 linestyles=(0, (1.2, 1.5)),
                 zorder=2,
+                alpha=alpha,
             )
 
-            if label_anchor == "start":
-                x = ax.get_xlim()[0]
-                ha = "left"
-            else:
-                x = ax.get_xlim()[1]
-                ha = "right"
-
-            label = f"{tech} {year} – {int(lf * 100)}% LF"
-
-            ax.text(
-                x,
-                y + sign * y_offset,
-                label,
-                fontproperties=FONT_SEMI_BOLD,
-                fontsize=medium_font,
-                color=color,
-                rotation=0,
-                va=va,
-                ha=ha,
-                zorder=4,
-            )
+        draw_lcoe_label(
+            ax=ax,
+            tech=tech,
+            year=year,
+            lf=lf,
+            df=df,
+            color=color,
+            ylims=ylims,
+            tech_render=tech_render,
+            alpha=alpha
+        )
 
     # -------------------------------------------------
     # X-axis styling

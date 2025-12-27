@@ -1,6 +1,7 @@
 import matplotlib.font_manager as fm
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+import numpy as np
 
 # ===============================================================
 # Fonts
@@ -72,7 +73,7 @@ component_colors = {
     "BESS Power CAPEX": "#00316E",
 
     # Cost-only components (explicit semantic colours)
-    "Augmentation": "#DD8452",   # pink / salmon
+    "Augmentation": "#E377C2", # "#DD8452",   # pink / salmon
     "Opex": "#E377C2",           # pink
 }
 
@@ -82,6 +83,13 @@ capacity_colors = {
     "BESS Power": component_colors["BESS Power CAPEX"]
 }
 
+GREENS = {
+    2030: "#4CAF50", 2025: "#66BB6A", 2020: "#81C784", 2015: "#A5D6A7"
+}
+
+REDS = {
+    2030: "#a70000", 2025: "#ff2e2e", 2020: "#ff5252", 2015: "#ff7b7b"
+}
 CLEAN_CMAP = mcolors.LinearSegmentedColormap.from_list(
     "clean_green", CLEAN_COLORS
 )
@@ -104,31 +112,32 @@ COLORMAPS = {
     "fossil": FOSSIL_CMAP,
 }
 
+def lerp_color(c1, c2, t):
+    c1 = np.array(mcolors.to_rgb(c1))
+    c2 = np.array(mcolors.to_rgb(c2))
+    return tuple(c1 + t * (c2 - c1))
+
+def year_colors(anchor):
+    years = sorted(anchor)
+    out = {}
+
+    for y in range(years[0], years[-1] + 1):
+        if y in anchor:
+            out[y] = mcolors.to_rgb(anchor[y])
+        else:
+            y0 = max(yr for yr in years if yr < y)
+            y1 = min(yr for yr in years if yr > y)
+            t = (y - y0) / (y1 - y0)
+            out[y] = lerp_color(anchor[y0], anchor[y1], t)
+
+    return out
+
+CLEAN_YEARS  = year_colors(GREENS)
+FOSSIL_YEARS = year_colors(REDS)
 
 def build_color_lookup(tech_years):
-    """
-    Returns {(tech, year): color}
-    Darker = more recent year, normalised per family.
-    """
-    family_years = {}
-    for s in tech_years:
-        fam = TECH_FAMILY[s["tech"]]
-        family_years.setdefault(fam, set()).add(s["year"])
-
-    normalisers = {
-        fam: mcolors.Normalize(vmin=min(yrs), vmax=max(yrs))
-        for fam, yrs in family_years.items()
+    return {
+        (s["tech"], s["year"]):
+            (CLEAN_YEARS if TECH_FAMILY[s["tech"]] == "clean" else FOSSIL_YEARS)[s["year"]]
+        for s in tech_years
     }
-
-    lookup = {}
-    for s in tech_years:
-        tech, year = s["tech"], s["year"]
-        fam = TECH_FAMILY[tech]
-        cmap = COLORMAPS[fam]
-        norm = normalisers[fam]
-
-        # Avoid extreme ends of the colormap
-        t = 0.35 + 0.55 * norm(year)
-        lookup[(tech, year)] = cmap(t)
-
-    return lookup

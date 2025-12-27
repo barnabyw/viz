@@ -37,22 +37,26 @@ YEAR = 2025
 
 TITLE_RAW = f"{COUNTRY} in {YEAR}: solar and BESS cost breakdown"
 
-TECH_YEARS = [
-    {"tech": "Solar+BESS", "year": YEAR},
+line_tech_years = [
+    {"tech": "Solar+BESS", "year": 2025, "highlight": True},
+    {"tech": "Solar+BESS", "year": 2020},
+    {"tech": "Solar+BESS", "year": 2015},
+    {"tech": "Gas", "year": 2025, "highlight": True}
 ]
 
-LCOE_YLIMS = (0, 350)
+component_tech_years = None #[{"tech": "Solar+BESS", "year": 2025}]
+
+LCOE_YLIMS = (0, 400)
 
 # -------------------------------------------------
 # Load LCOE data
 # -------------------------------------------------
 df_lcoe = pd.read_csv(
-    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results.csv"
+    r"C:\Users\barna\PycharmProjects\solar_bess\outputs\lcoe_results_complete.csv"
 )
 
 df_lcoe = df_lcoe[
-    (df_lcoe["Country"] == COUNTRY) &
-    (df_lcoe["Year"] == YEAR)
+    df_lcoe["Country"] == COUNTRY
 ]
 
 # -------------------------------------------------
@@ -91,7 +95,7 @@ ax = fig.add_subplot(1, 1, 1)
 ax.set_facecolor(BACKGROUND)
 
 fig.subplots_adjust(
-    left=0.08,
+    left=0.087,
     right=0.80,
     top=0.80,
     bottom=0.14,
@@ -103,16 +107,16 @@ fig.subplots_adjust(
 draw_lcoe_chart(
     ax=ax,
     df=df_lcoe,
-    tech_years=TECH_YEARS,
-    default_fossil_lf=None,   # not used (no fossil)
-    tech_render=TECH_RENDER,
-    tech_label_mode=TECH_LABEL_MODE,
-    ylims=LCOE_YLIMS,
-    y_tick_step=50,
+    line_tech_years=line_tech_years,
+    component_tech_years=component_tech_years,
     component_df=df_components,
     component_order=component_order,
     component_colors=component_colors,
-    area_alpha=0.65,
+    default_fossil_lf=[0.7],
+    tech_render=TECH_RENDER,
+    tech_label_mode=TECH_LABEL_MODE,
+    ylims=LCOE_YLIMS,
+    y_tick_step=50
 )
 
 # -------------------------------------------------
@@ -147,7 +151,7 @@ ax.set_xlabel(
 # -------------------------------------------------
 # Save
 # -------------------------------------------------
-name = build_chart_name(COUNTRY, TECH_YEARS)
+name = build_chart_name(COUNTRY, line_tech_years)
 output_path = (
     fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\Good charts\video\{name}_components.png"
 )
