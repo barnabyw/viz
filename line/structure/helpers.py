@@ -5,7 +5,8 @@ from line.style.styling import (
     FONT_REGULAR, FONT_MEDIUM, FONT_SEMI_BOLD,
     DARK_GREY, CLOUD, BACKGROUND, build_color_lookup, small_font, medium_font, large_font, STACK_COLOURS
 )
-from line.style.config import TECH_RENDER
+from line.style.config import TECH_RENDER, LABEL_OFFSET_PX
+
 
 def fossil_lcoe_at_lf(df, tech, year, lf):
     subset = df[
@@ -29,7 +30,7 @@ def curve_label_properties_display(
     y,
     x_anchor=0.62,
     dx=0.05,
-    offset_px=18,
+    offset_px=LABEL_OFFSET_PX,
     label_pos="above"
 ):
 
@@ -76,8 +77,9 @@ def style_y_axis(
         xmin=ax.get_xlim()[0],
         xmax=ax.get_xlim()[1],
         color=CLOUD,
-        lw=0.6,
+        lw=1,
         zorder=0,
+        alpha=0.65
     )
 
     # Tick labels
@@ -128,15 +130,10 @@ def draw_lcoe_label(
     ylims,
     tech_render,
     label_pos="above",
-    label_anchor="end",
+    label_anchor="start",
     alpha=1
 ):
-    y_min, y_max = ylims
-    y_range = y_max - y_min
-    y_offset = 0.017 * y_range
-
     sign = 1 if label_pos == "above" else -1
-    va = "bottom" if label_pos == "above" else "top"
 
     # -------------------------
     # CURVE TECHS
@@ -157,9 +154,6 @@ def draw_lcoe_label(
             label_pos=label_pos,
         )
 
-        if label_pos == "below":
-            y -= 0.017 * y_range
-
         ax.text(
             x,
             y,
@@ -171,7 +165,7 @@ def draw_lcoe_label(
             va="center",
             ha="center",
             zorder=4,
-            alpha=alpha
+            alpha=alpha,
         )
 
     # -------------------------
@@ -187,15 +181,20 @@ def draw_lcoe_label(
             x = ax.get_xlim()[1]
             ha = "right"
 
+        p_line = ax.transData.transform((x, y))
+        p_label = p_line + np.array([0, sign * LABEL_OFFSET_PX])
+        x_lab, y_lab = ax.transData.inverted().transform(p_label)
+
         ax.text(
-            x,
-            y + sign * y_offset,
+            x_lab,
+            y_lab,
             f"{tech} {year} – {int(lf * 100)}% LF",
             fontproperties=FONT_SEMI_BOLD,
             fontsize=medium_font,
             color=color,
             rotation=0,
-            va=va,
+            va="center", #va
             ha=ha,
             zorder=4,
+            alpha=alpha,
         )

@@ -37,14 +37,17 @@ YEAR = 2025
 
 TITLE_RAW = f"{COUNTRY} in {YEAR}: solar and BESS cost breakdown"
 
+tag = "1.0"
+
 line_tech_years = [
     {"tech": "Solar+BESS", "year": 2025, "highlight": True},
-    {"tech": "Solar+BESS", "year": 2020},
+    #{"tech": "Solar+BESS", "year": 2020},
     {"tech": "Solar+BESS", "year": 2015},
-    {"tech": "Gas", "year": 2025, "highlight": True}
+    {"tech": "Gas", "year": 2025, "highlight": True},
+    {"tech": "Gas", "year": 2015, "label_pos": "above", "label_anchor": "end"}
 ]
 
-component_tech_years = None #[{"tech": "Solar+BESS", "year": 2025}]
+component_tech_years = [{"tech": "Solar+BESS", "year": 2015}] # None
 
 LCOE_YLIMS = (0, 400)
 
@@ -153,7 +156,7 @@ ax.set_xlabel(
 # -------------------------------------------------
 name = build_chart_name(COUNTRY, line_tech_years)
 output_path = (
-    fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\Good charts\video\{name}_components.png"
+    fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\video charts\{tag}_{name}.png"
 )
 
 fig.savefig(

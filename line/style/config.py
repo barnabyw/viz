@@ -13,5 +13,6 @@ TECH_LABEL_MODE = {
 POSITIVE = ["Solar", "Battery Discharge", "Unmet Demand"]
 NEGATIVE = ["Battery Charge", "Curtailment"]
 
-OTHER_LINE_ALPHA = 0.7
-LINE_WEIGHT = 1.2
+OTHER_LINE_ALPHA = 0.75
+LINE_WEIGHT = 3
+LABEL_OFFSET_PX = 18

@@ -105,13 +105,15 @@ def draw_lcoe_chart(
             normalised.append(entry)
 
     color_lookup = build_color_lookup(line_tech_years)
-    LW_MAIN = 2.6
 
     # -------------------------------------------------
     # Draw LINES + LABELS
     # -------------------------------------------------
     highlight_mode = any(s.get("highlight", False) for s in line_tech_years)
     for s in normalised:
+        label_pos = s.get("label_pos", "above")
+        label_anchor = s.get("label_anchor", "start")
+
         tech, year, lf = s["tech"], s["year"], s["lf"]
         color = color_lookup[(tech, year)]
 
@@ -131,6 +133,7 @@ def draw_lcoe_chart(
             ax.plot(
                 data["Availability"].values,
                 data["LCOE"].values,
+                lw=LINE_WEIGHT,
                 color=color,
                 zorder=3,
                 alpha=alpha,
@@ -143,10 +146,11 @@ def draw_lcoe_chart(
             ax.hlines(
                 y,
                 *ax.get_xlim(),
+                lw=LINE_WEIGHT,
                 color=color,
                 linestyles=(0, (1.2, 1.5)),
                 zorder=2,
-                alpha=alpha,
+                alpha=alpha-0.1,
             )
 
         draw_lcoe_label(
@@ -158,7 +162,9 @@ def draw_lcoe_chart(
             color=color,
             ylims=ylims,
             tech_render=tech_render,
-            alpha=alpha
+            label_pos=label_pos,
+            label_anchor=label_anchor,
+            alpha=alpha - 0.1,
         )
 
     # -------------------------------------------------
