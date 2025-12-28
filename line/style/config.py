@@ -1,4 +1,7 @@
 
+
+
+
 TECH_RENDER = {
     "Solar+BESS": "curve",
     "Gas": "horizontal",
@@ -16,3 +19,4 @@ NEGATIVE = ["Battery Charge", "Curtailment"]
 OTHER_LINE_ALPHA = 0.75
 LINE_WEIGHT = 3
 LABEL_OFFSET_PX = 18
+LABEL_HORZ_OFF_PX = 9

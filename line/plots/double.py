@@ -36,8 +36,13 @@ COUNTRY = "Spain"
 AVAIL = 1
 YEAR = 2015
 
+tag = "0.a"
+
 TECH_YEARS = [{"tech": "Solar+BESS", "year": YEAR}]
 LCOE_YLIMS = (0, 500)
+
+line_tech_years = []
+component_tech_years = [{"tech": "Solar+BESS", "year": 2015}] # None
 
 # ===============================================================
 # Load data
@@ -151,7 +156,7 @@ draw_capacity_cluster_chart(
     df=df_lcoe,
     tech_years=TECH_YEARS,
     max_avail=AVAIL,
-    highlight_avail=AVAIL,
+    #highlight_avail=AVAIL,
     duration_power_ratio=4.0,
     bar_width=0.02,
     colors=capacity_colors,
@@ -166,18 +171,18 @@ ax_mid.set_xlabel(
 )
 
 draw_lcoe_chart(
-    ax=ax_bot,
+    ax=ax,
     df=df_lcoe,
-    tech_years=TECH_YEARS,
+    line_tech_years=line_tech_years,
+    component_tech_years=component_tech_years,
+    component_df=df_components,
+    component_order=component_order,
+    component_colors=component_colors,
     default_fossil_lf=None,
     tech_render=TECH_RENDER,
     tech_label_mode=TECH_LABEL_MODE,
     ylims=LCOE_YLIMS,
-    y_tick_step=50,
-    component_df=df_components,
-    component_order=component_order,
-    component_colors=component_colors,
-    area_alpha=0.65,
+    y_tick_step=100,
     right_axis=True
 )
 
@@ -197,9 +202,9 @@ apply_vertical_squeeze(ax_top, ax_mid, ax_bot, BASE_POS)
 # ===============================================================
 pad_y = 0.02
 for ax, title in {
-    ax_top: f"Mean weekly dispatch (availability {AVAIL:.0%})",
-    ax_mid: "Installed solar and storage capacity",
-    ax_bot: f"Levelised cost of electricity – component breakdown ({YEAR})",
+    ax_top: f"Average dispatch pattern",  # {avail:.0%}
+    ax_mid: "Solar and storage capacities to meet % of annual energy",
+    ax_bot: f"Levelised cost of electricity by component ({COUNTRY}, {YEAR})",
 }.items():
     pos = ax.get_position()
     fig.text(
@@ -308,18 +313,18 @@ def build_dashboard(fig, axes):
         )
 
         draw_lcoe_chart(
-            ax=ax_bot,
+            ax=ax,
             df=df_lcoe,
-            tech_years=TECH_YEARS,
+            line_tech_years=line_tech_years,
+            component_tech_years=component_tech_years,
+            component_df=df_components,
+            component_order=component_order,
+            component_colors=component_colors,
             default_fossil_lf=None,
             tech_render=TECH_RENDER,
             tech_label_mode=TECH_LABEL_MODE,
             ylims=LCOE_YLIMS,
-            y_tick_step=50,
-            component_df=df_components,
-            component_order=component_order,
-            component_colors=component_colors,
-            area_alpha=0.65,
+            y_tick_step=100,
             right_axis=True
         )
 
@@ -339,7 +344,7 @@ def build_dashboard(fig, axes):
         for ax, title in {
             ax_top: f"Average dispatch pattern", # {avail:.0%}
             ax_mid: "Solar and storage capacities to meet % of annual energy",
-            ax_bot: f"Levelised cost of electricity – component breakdown ({COUNTRY}, {YEAR})",
+            ax_bot: f"Levelised cost of electricity by component ({COUNTRY}, {YEAR})",
         }.items():
             pos = ax.get_position()
             fig.text(
@@ -398,12 +403,12 @@ def build_dashboard(fig, axes):
 # ===============================================================
 if __name__ == "__main__":
     name = build_chart_name(COUNTRY, TECH_YEARS)
-    output_path = rf"C:\Users\barna\OneDrive\Documents\Solar_BESS\Good charts\video\{name}_triple.png"
+    output_path = rf"C:\Users\barna\OneDrive\Documents\Solar_BESS\video charts\{tag}_{name}_triple.png"
 
     fig.savefig(
         output_path,
-        dpi=300,
-        facecolor=fig.get_facecolor(),
+        dpi=200,
+        #facecolor=fig.get_facecolor(),
     )
 
     time.sleep(0.3)

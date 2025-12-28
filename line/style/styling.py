@@ -88,7 +88,7 @@ GREENS = {
 }
 
 REDS = {
-    2030: "#a70000", 2025: "#ff2e2e", 2020: "#ff5252", 2015: "#ff7b7b"
+    2030: "#a70000", 2025: "#FF474D", 2020: "#ff5252", 2015: "#ff7b7b" # ff2e2e
 }
 CLEAN_CMAP = mcolors.LinearSegmentedColormap.from_list(
     "clean_green", CLEAN_COLORS

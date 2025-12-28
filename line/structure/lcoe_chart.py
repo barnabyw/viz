@@ -25,7 +25,7 @@ def draw_lcoe_chart(
     component_tech_years=None,
     component_order=None,
     component_colors=None,
-    area_alpha=0.6,
+    area_alpha=0.9,
     right_axis=False,
 ):
     """
@@ -111,8 +111,8 @@ def draw_lcoe_chart(
     # -------------------------------------------------
     highlight_mode = any(s.get("highlight", False) for s in line_tech_years)
     for s in normalised:
-        label_pos = s.get("label_pos", "above")
-        label_anchor = s.get("label_anchor", "start")
+        label_pos = s.get("label_pos")  # None if not provided
+        label_anchor = s.get("label_anchor")  # None if not provided
 
         tech, year, lf = s["tech"], s["year"], s["lf"]
         color = color_lookup[(tech, year)]
@@ -150,7 +150,7 @@ def draw_lcoe_chart(
                 color=color,
                 linestyles=(0, (1.2, 1.5)),
                 zorder=2,
-                alpha=alpha-0.1,
+                alpha=alpha,
             )
 
         draw_lcoe_label(
@@ -164,7 +164,7 @@ def draw_lcoe_chart(
             tech_render=tech_render,
             label_pos=label_pos,
             label_anchor=label_anchor,
-            alpha=alpha - 0.1,
+            alpha=alpha,
         )
 
     # -------------------------------------------------

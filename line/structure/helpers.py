@@ -5,7 +5,7 @@ from line.style.styling import (
     FONT_REGULAR, FONT_MEDIUM, FONT_SEMI_BOLD,
     DARK_GREY, CLOUD, BACKGROUND, build_color_lookup, small_font, medium_font, large_font, STACK_COLOURS
 )
-from line.style.config import TECH_RENDER, LABEL_OFFSET_PX
+from line.style.config import TECH_RENDER, LABEL_OFFSET_PX, LABEL_HORZ_OFF_PX
 
 
 def fossil_lcoe_at_lf(df, tech, year, lf):
@@ -129,14 +129,12 @@ def draw_lcoe_label(
     color,
     ylims,
     tech_render,
-    label_pos="above",
-    label_anchor="start",
+    label_pos=None,        # ← allow None
+    label_anchor=None,     # ← allow None
     alpha=1
 ):
-    sign = 1 if label_pos == "above" else -1
-
     # -------------------------
-    # CURVE TECHS
+    # CURVE TECHS (unchanged)
     # -------------------------
     if tech_render[tech] == "curve":
         data = (
@@ -151,7 +149,7 @@ def draw_lcoe_label(
             ax,
             x_vals,
             y_vals,
-            label_pos=label_pos,
+            label_pos=label_pos or "above",
         )
 
         ax.text(
@@ -169,20 +167,39 @@ def draw_lcoe_label(
         )
 
     # -------------------------
-    # FOSSIL TECHS
+    # FLAT / FOSSIL TECHS
     # -------------------------
     else:
         y = fossil_lcoe_at_lf(df, tech, year, lf)
 
+        # ---- defaults for flat lines ----
+        label_anchor = label_anchor or "end"
+        label_pos = label_pos or "center"
+
+        # Base x position (data space)
         if label_anchor == "start":
             x = ax.get_xlim()[0]
-            ha = "left"
-        else:
-            x = ax.get_xlim()[1]
             ha = "right"
+            dx = -LABEL_HORZ_OFF_PX  # move left in pixels
+        else:  # "end"
+            x = ax.get_xlim()[1]
+            ha = "left"
+            dx = LABEL_HORZ_OFF_PX  # move right in pixels
 
+        # Vertical alignment
+        if label_pos == "above":
+            dy = LABEL_OFFSET_PX
+            va = "bottom"
+        elif label_pos == "below":
+            dy = -LABEL_OFFSET_PX
+            va = "top"
+        else:  # "center"
+            dy = 0
+            va = "center"
+
+        # Transform using display space
         p_line = ax.transData.transform((x, y))
-        p_label = p_line + np.array([0, sign * LABEL_OFFSET_PX])
+        p_label = p_line + np.array([dx, dy])
         x_lab, y_lab = ax.transData.inverted().transform(p_label)
 
         ax.text(
@@ -193,7 +210,7 @@ def draw_lcoe_label(
             fontsize=medium_font,
             color=color,
             rotation=0,
-            va="center", #va
+            va=va,
             ha=ha,
             zorder=4,
             alpha=alpha,

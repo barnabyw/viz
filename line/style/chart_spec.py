@@ -10,7 +10,7 @@ from line.style.styling import (
     small_font,
 )
 
-def setup_lcoe_figure(title):
+def setup_lcoe_figure(title, subtitle):
     DPI = 100
     fig = plt.figure(figsize=(1920 / DPI, 1080 / DPI), dpi=DPI)
     fig.patch.set_facecolor(BACKGROUND)
@@ -21,14 +21,14 @@ def setup_lcoe_figure(title):
     fig.subplots_adjust(
         left=0.087,
         right=0.80,
-        top=0.80,
+        top=0.82,
         bottom=0.14,
     )
 
     # ---- titles (draw ONCE) ----
     fig.text(
         0.05,
-        0.91,
+        0.9,
         title,
         fontproperties=FONT_SEMI_BOLD,
         fontsize=large_font,
@@ -37,15 +37,15 @@ def setup_lcoe_figure(title):
 
     fig.text(
         0.05,
-        0.87,
-        "Levelised cost of electricity ($/MWh)",
+        0.86,
+        f"Levelised cost of electricity ($/MWh) - {subtitle}",
         fontproperties=FONT_REGULAR,
         fontsize=medium_font,
         color=DARK_GREY,
     )
 
     ax.set_xlabel(
-        "Load factor",
+        "Demand met/load factor",
         fontproperties=FONT_REGULAR,
         fontsize=small_font,
         color=DARK_GREY,
