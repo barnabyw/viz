@@ -5,15 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="932f7bd9-c11e-41b4-b032-2615e5c08953" name="Changes" comment="chart_spec to replace formatting">
-      <change afterPath="$PROJECT_DIR$/line/animation/anim_lcoe.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/line/plots/lcoe_lines_areas_shade.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/plots/double.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/double.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/plots/lcoe_lines_areas.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/plots/lcoe_lines_areas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/line/shot_list.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/shot_list.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/structure/helpers.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/structure/helpers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/line/structure/lcoe_chart.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/structure/lcoe_chart.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/style/chart_spec.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/chart_spec.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/style/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/line/style/styling.py" beforeDir="false" afterPath="$PROJECT_DIR$/line/style/styling.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,6 +61,7 @@
     "Python.lcoe_chart.executor": "Run",
     "Python.lcoe_lines.executor": "Run",
     "Python.lcoe_lines_areas.executor": "Run",
+    "Python.lcoe_lines_areas_shade.executor": "Run",
     "Python.line_appear.executor": "Run",
     "Python.main.executor": "Run",
     "Python.main_monthly.executor": "Run",
@@ -326,7 +325,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766915407214</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="chart_spec to replace formatting">
+      <option name="closed" value="true" />
+      <created>1766942228942</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1766942228944</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

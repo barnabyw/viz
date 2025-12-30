@@ -1,30 +1,27 @@
 # -------------------------------------------------
 # Configuration
 # -------------------------------------------------
-COUNTRY = "India"
+COUNTRY = "United States"
 
-TITLE_RAW = f"The last 2 years have transformed the economics in India/China"
+TITLE_RAW = f"Solar and BESS costs have declined 80% in 10 years"
 
-tag = "3.a"
+tag = "1.ga"
 
 line_tech_years = [
-    {"tech": "Solar+BESS", "year": 2020},
-    {"tech": "Solar+BESS", "year": 2023, "highlight": True, "label_pos": "below"},
+    #{"tech": "Solar+BESS", "year": 2025, "highlight": True},
+    #{"tech": "Solar+BESS", "year": 2020},
+    #{"tech": "Solar+BESS", "year": 2015, "highlight": True},
+    {"tech": "Solar+BESS", "year": 2025, "scenario": "Low"},
     {"tech": "Solar+BESS", "year": 2025, "highlight": True},
-    #{"tech": "Coal", "year": 2020, "highlight": True},
-    {"tech": "Coal", "year": 2025, "highlight": True},
-    #{"tech": "Gas", "year": 2025, "highlight": True}, #"lf": [0.4,0.7]},
+    {"tech": "Solar+BESS", "year": 2024, "scenario": "High"},
+    #{"tech": "Gas", "year": 2015, "highlight": True},
+    {"tech": "Gas", "year": 2025, "highlight": True, "lf": [0.4,0.7]},
     #{"tech": "Gas", "year": 2015, "highlight": True} #, "label_pos": "above", "label_anchor": "end"}
-    #{"tech": "Solar+BESS", "year": 2024, "scenario": "High"},
 ]
 
 component_tech_years = None #[{"tech": "Solar+BESS", "year": 2015}] # None
 
-LCOE_YLIMS = (0, 125)
-
-output_path = (
-    fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\video charts\raw\{tag}"
-)
+LCOE_YLIMS = (0, 175)
 
 # -------------------------------------------------
 # Component styling
@@ -66,8 +63,10 @@ from line.style.styling import (
     large_font,
     medium_font,
     small_font,
-    component_colors
+    component_colors,
+    build_color_lookup
 )
+from line.structure.helpers import fossil_lcoe_at_lf
 
 TITLE = mpl_text(TITLE_RAW)
 
@@ -90,6 +89,92 @@ df_components = pd.read_csv(
 )
 
 df_components = df_components[(df_components["Country"] == COUNTRY)] #&(df_components["Year"] == YEAR)]
+
+def shade_solar_bess_envelope(
+    ax,
+    df,
+    *,
+    tech="Solar+BESS",
+    years,
+    scenarios=None,
+    baseline_scenario=("Base", "", None),
+    color,
+    alpha=0.1,
+    zorder=0,
+):
+    """
+    Shade envelope (min–max) across multiple Solar+BESS curves.
+    """
+
+    mask = (df["Tech"] == tech) & (df["Year"].isin(years))
+
+    if scenarios is not None:
+        mask &= df["Scenario"].isin(scenarios)
+    else:
+        mask &= df["Scenario"].isin(baseline_scenario)
+
+    sub = df[mask]
+
+    if sub.empty:
+        return
+
+    pivot = (
+        sub
+        .pivot_table(
+            index="Availability",
+            values="LCOE",
+            aggfunc=["min", "max"]
+        )
+        .sort_index()
+    )
+
+    ax.fill_between(
+        pivot.index,
+        pivot[("min", "LCOE")],
+        pivot[("max", "LCOE")],
+        color=color,
+        alpha=alpha,
+        zorder=zorder,
+    )
+
+def shade_fossil_lf_band(
+    ax,
+    df,
+    *,
+    tech,
+    year,
+    lfs,
+    scenario=None,
+    color,
+    alpha=0.1,
+    zorder=0,
+):
+    """
+    Shade between fossil LCOEs at multiple load factors.
+    """
+
+    ys = []
+    for lf in lfs:
+        y = fossil_lcoe_at_lf(
+            df,
+            tech,
+            year,
+            lf,
+            scenario=scenario,
+        )
+        ys.append(y)
+
+    y_min, y_max = min(ys), max(ys)
+
+    ax.fill_between(
+        ax.get_xlim(),
+        y_min,
+        y_max,
+        color=color,
+        alpha=alpha,
+        zorder=zorder,
+    )
+
 
 # -------------------------------------------------
 # Draw chart (components enabled)
@@ -148,19 +233,40 @@ if __name__ == "__main__":
         ylims=LCOE_YLIMS,
     )
 
+    color_lookup = build_color_lookup(line_tech_years)
+
+    shade_solar_bess_envelope(
+        ax,
+        df_lcoe,
+        years=[2024, 2025],
+        scenarios=["Low", "High", "Base"],
+        color=color_lookup[("Solar+BESS", 2025)],
+    )
+
+    shade_fossil_lf_band(
+        ax,
+        df_lcoe,
+        tech="Gas",
+        year=2025,
+        lfs=[0.4, 0.7],
+        color=color_lookup[("Gas", 2025)],  # or gas colour
+    )
+
     # -------------------------------------------------
     # Save
     # -------------------------------------------------
 
     name = build_chart_name(COUNTRY, line_tech_years)
 
-    full_path = output_path + f"_{name}.png"
+    output_path = (
+        fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\video charts\{tag}_{name}.png"
+    )
 
     fig.savefig(
-        full_path,
+        output_path,
         dpi=300,
         facecolor=fig.get_facecolor(),
     )
 
     time.sleep(0.3)
-    os.startfile(full_path)
+    os.startfile(output_path)

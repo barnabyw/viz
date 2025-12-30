@@ -7,52 +7,39 @@ from line.style.styling import (
 )
 from line.style.config import TECH_RENDER, LABEL_OFFSET_PX, LABEL_HORZ_OFF_PX
 
-
-def fossil_lcoe_at_lf(df, tech, year, lf):
-    subset = df[
+def fossil_lcoe_at_lf(
+    df,
+    tech,
+    year,
+    lf,
+    scenario=None,
+):
+    mask = (
         (df["Tech"] == tech) &
         (df["Year"] == year) &
         (df["Availability"] == lf)
-    ]
+    )
+
+    if scenario is not None:
+        mask &= df["Scenario"] == scenario
+
+    subset = df[mask]
+
     if subset.empty:
         raise ValueError(
-            f"No LCOE found for Tech={tech}, Year={year}, Availability={lf}"
+            f"No LCOE found for Tech={tech}, Year={year}, "
+            f"Availability={lf}"
+            + (f", Scenario={scenario}" if scenario is not None else "")
         )
+
     if len(subset) > 1:
         raise ValueError(
-            f"Multiple LCOE rows found for Tech={tech}, Year={year}, Availability={lf}"
+            f"Multiple LCOE rows found for Tech={tech}, Year={year}, "
+            f"Availability={lf}"
+            + (f", Scenario={scenario}" if scenario is not None else "")
         )
+
     return subset.iloc[0]["LCOE"]
-
-def curve_label_properties_display(
-    ax,
-    x,
-    y,
-    x_anchor=0.62,
-    dx=0.05,
-    offset_px=LABEL_OFFSET_PX,
-    label_pos="above"
-):
-
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    x1, x2 = x_anchor - dx, x_anchor + dx
-    y1 = np.interp(x1, x, y)
-    y2 = np.interp(x2, x, y)
-
-    p1 = ax.transData.transform((x1, y1))
-    p2 = ax.transData.transform((x2, y2))
-
-    angle = np.degrees(np.arctan2(p2[1] - p1[1], p2[0] - p1[0]))
-
-    y_curve = np.interp(x_anchor, x, y)
-    p_curve = ax.transData.transform((x_anchor, y_curve))
-
-    sign = 1 if label_pos == "above" else -1
-    p_label = p_curve + np.array([0, sign * offset_px])
-
-    return *ax.transData.inverted().transform(p_label), angle
 
 def style_y_axis(
     ax,
@@ -120,6 +107,36 @@ def style_y_axis(
 
     ax.tick_params(axis="y", length=0, pad=6)
 
+def curve_label_properties_display(
+    ax,
+    x,
+    y,
+    x_anchor=0.62,
+    dx=0.05,
+    offset_px=LABEL_OFFSET_PX,
+    label_pos="above"
+):
+
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    x1, x2 = x_anchor - dx, x_anchor + dx
+    y1 = np.interp(x1, x, y)
+    y2 = np.interp(x2, x, y)
+
+    p1 = ax.transData.transform((x1, y1))
+    p2 = ax.transData.transform((x2, y2))
+
+    angle = np.degrees(np.arctan2(p2[1] - p1[1], p2[0] - p1[0]))
+
+    y_curve = np.interp(x_anchor, x, y)
+    p_curve = ax.transData.transform((x_anchor, y_curve))
+
+    sign = 1 if label_pos == "above" else -1
+    p_label = p_curve + np.array([0, sign * offset_px])
+
+    return *ax.transData.inverted().transform(p_label), angle
+
 def draw_lcoe_label(
     ax,
     tech,
@@ -129,18 +146,33 @@ def draw_lcoe_label(
     color,
     ylims,
     tech_render,
-    label_pos=None,        # ← allow None
-    label_anchor=None,     # ← allow None
-    alpha=1
+    label_pos=None,        # allow None
+    label_anchor=None,     # allow None
+    alpha=1,
+    scenario=None,
 ):
     # -------------------------
-    # CURVE TECHS (unchanged)
+    # CURVE TECHS
     # -------------------------
     if tech_render[tech] == "curve":
-        data = (
-            df[(df["Tech"] == tech) & (df["Year"] == year)]
-            .sort_values("Availability")
-        )
+
+        mask = (df["Tech"] == tech) & (df["Year"] == year)
+
+        if scenario is not None:
+            # Explicit scenario requested
+            mask &= df["Scenario"] == scenario
+        else:
+            # No scenario → baseline only
+            mask &= (
+                    df["Scenario"].isna() |
+                    (df["Scenario"] == "") |
+                    (df["Scenario"] == "Base")
+            )
+
+        data = df[mask].sort_values("Availability")
+
+        if data.empty:
+            return
 
         x_vals = data["Availability"].values
         y_vals = data["LCOE"].values
@@ -152,10 +184,14 @@ def draw_lcoe_label(
             label_pos=label_pos or "above",
         )
 
+        label = f"{tech} {year}"
+        if scenario is not None:
+            label += f" ({scenario})"
+
         ax.text(
             x,
             y,
-            f"{tech} {year}",
+            label,
             fontproperties=FONT_SEMI_BOLD,
             fontsize=medium_font,
             color=color,
@@ -170,7 +206,13 @@ def draw_lcoe_label(
     # FLAT / FOSSIL TECHS
     # -------------------------
     else:
-        y = fossil_lcoe_at_lf(df, tech, year, lf)
+        y = fossil_lcoe_at_lf(
+            df,
+            tech,
+            year,
+            lf,
+            scenario=scenario,
+        )
 
         # ---- defaults for flat lines ----
         label_anchor = label_anchor or "end"
@@ -180,11 +222,11 @@ def draw_lcoe_label(
         if label_anchor == "start":
             x = ax.get_xlim()[0]
             ha = "right"
-            dx = -LABEL_HORZ_OFF_PX  # move left in pixels
+            dx = -LABEL_HORZ_OFF_PX
         else:  # "end"
             x = ax.get_xlim()[1]
             ha = "left"
-            dx = LABEL_HORZ_OFF_PX  # move right in pixels
+            dx = LABEL_HORZ_OFF_PX
 
         # Vertical alignment
         if label_pos == "above":
@@ -202,10 +244,14 @@ def draw_lcoe_label(
         p_label = p_line + np.array([dx, dy])
         x_lab, y_lab = ax.transData.inverted().transform(p_label)
 
+        label = f"{tech} {year} – {int(lf * 100)}% LF"
+        if scenario is not None:
+            label += f" ({scenario})"
+
         ax.text(
             x_lab,
             y_lab,
-            f"{tech} {year} – {int(lf * 100)}% LF",
+            label,
             fontproperties=FONT_SEMI_BOLD,
             fontsize=medium_font,
             color=color,

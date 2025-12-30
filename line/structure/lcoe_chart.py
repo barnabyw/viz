@@ -91,17 +91,19 @@ def draw_lcoe_chart(
     # -------------------------------------------------
     normalised = []
     for s in line_tech_years:
-        tech, year = s["tech"], s["year"]
+        tech, year, scenario = s["tech"], s["year"], s.get("scenario")
 
         if tech in ["Gas", "Coal"]:
             lfs = s.get("lf", default_fossil_lf)
             for lf in lfs:
                 entry = s.copy()
                 entry["lf"] = lf
+                entry["scenario"] = scenario
                 normalised.append(entry)
         else:
             entry = s.copy()
             entry["lf"] = None
+            entry["scenario"] = scenario
             normalised.append(entry)
 
     color_lookup = build_color_lookup(line_tech_years)
@@ -122,10 +124,20 @@ def draw_lcoe_chart(
 
         # -------- curve techs --------
         if tech_render.get(tech) == "curve":
-            data = (
-                df[(df["Tech"] == tech) & (df["Year"] == year)]
-                .sort_values("Availability")
-            )
+            mask = (df["Tech"] == tech) & (df["Year"] == year)
+
+            if s.get("scenario") is not None:
+                # Explicit scenario requested
+                mask &= df["Scenario"] == s["scenario"]
+            else:
+                # No scenario → baseline only
+                mask &= (
+                        df["Scenario"].isna() |
+                        (df["Scenario"] == "") |
+                        (df["Scenario"] == "Base")
+                )
+
+            data = df[mask].sort_values("Availability")
 
             if data.empty:
                 continue
@@ -141,7 +153,13 @@ def draw_lcoe_chart(
 
         # -------- fossil techs --------
         else:
-            y = fossil_lcoe_at_lf(df, tech, year, lf)
+            y = fossil_lcoe_at_lf(
+                df,
+                tech,
+                year,
+                lf,
+                scenario=s.get("scenario"),
+            )
 
             ax.hlines(
                 y,
@@ -165,6 +183,7 @@ def draw_lcoe_chart(
             label_pos=label_pos,
             label_anchor=label_anchor,
             alpha=alpha,
+            scenario=s.get("scenario"),  # ← ADD THIS
         )
 
     # -------------------------------------------------

@@ -160,6 +160,7 @@ draw_capacity_cluster_chart(
     duration_power_ratio=4.0,
     bar_width=0.02,
     colors=capacity_colors,
+    ref_xline_label=True
 )
 
 ax_mid.set_xlabel(
@@ -408,7 +409,7 @@ if __name__ == "__main__":
     fig.savefig(
         output_path,
         dpi=200,
-        #facecolor=fig.get_facecolor(),
+        facecolor=BACKGROUND,
     )
 
     time.sleep(0.3)
