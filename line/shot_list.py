@@ -45,3 +45,38 @@ component_tech_years = None #[{"tech": "Solar+BESS", "year": 2015}] # None
 
 LCOE_YLIMS = (0, 350)
 
+COUNTRY = "China"
+
+TITLE_RAW = f"The last 2 years have transformed the economics in China"
+
+tag = "3.a"
+
+line_tech_years = [
+    {"tech": "Solar+BESS", "year": 2020},
+    {"tech": "Solar+BESS", "year": 2023, "highlight": True},
+    #{"tech": "Solar+BESS", "year": 2025, "highlight": True},
+    #{"tech": "Coal", "year": 2020, "highlight": True},
+    {"tech": "Coal", "year": 2025, "highlight": True},
+    #{"tech": "Gas", "year": 2025, "highlight": True}, #"lf": [0.4,0.7]},
+    #{"tech": "Gas", "year": 2015, "highlight": True} #, "label_pos": "above", "label_anchor": "end"}
+    #{"tech": "Solar+BESS", "year": 2024, "scenario": "High"},
+]
+
+COUNTRY = "United States"
+
+TITLE_RAW = f"Solar and BESS costs have declined 80% in 10 years"
+
+tag = "2.a"
+
+line_tech_years = [
+    #{"tech": "Solar+BESS", "year": 2025, "highlight": True},
+    #{"tech": "Solar+BESS", "year": 2020},
+    {"tech": "Solar+BESS", "year": 2024},
+    {"tech": "Solar+BESS", "year": 2025, "highlight": True},
+    {"tech": "Gas", "year": 2015, "highlight": True},
+    {"tech": "Gas", "year": 2025, "highlight": True},
+    #{"tech": "Solar+BESS", "year": 2025, "scenario": "Modo"},
+    #{"tech": "Gas", "year": 2015, "highlight": True} #, "label_pos": "above", "label_anchor": "end"}
+]
+
+component_tech_years = None #[{"tech": "Solar+BESS", "year": 2015}] # None

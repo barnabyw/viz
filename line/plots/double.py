@@ -33,7 +33,7 @@ from line.variable_map import VARIABLE_MAP
 # Configuration
 # ===============================================================
 COUNTRY = "Spain"
-AVAIL = 1
+AVAIL = 0.7
 YEAR = 2015
 
 tag = "0.a"
@@ -409,7 +409,7 @@ if __name__ == "__main__":
     fig.savefig(
         output_path,
         dpi=200,
-        facecolor=BACKGROUND,
+        #facecolor=BACKGROUND,
     )
 
     time.sleep(0.3)

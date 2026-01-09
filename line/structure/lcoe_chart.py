@@ -184,6 +184,7 @@ def draw_lcoe_chart(
             label_anchor=label_anchor,
             alpha=alpha,
             scenario=s.get("scenario"),  # ← ADD THIS
+            manual_text=s.get("label")
         )
 
     # -------------------------------------------------

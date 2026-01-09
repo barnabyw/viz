@@ -135,6 +135,10 @@ def curve_label_properties_display(
     sign = 1 if label_pos == "above" else -1
     p_label = p_curve + np.array([0, sign * offset_px])
 
+    # Manual visual correction for font asymmetry
+    if label_pos == "below":
+        p_label = p_label - np.array([0, offset_px * 0.6])
+
     return *ax.transData.inverted().transform(p_label), angle
 
 def draw_lcoe_label(
@@ -150,6 +154,7 @@ def draw_lcoe_label(
     label_anchor=None,     # allow None
     alpha=1,
     scenario=None,
+    manual_text=None
 ):
     # -------------------------
     # CURVE TECHS
@@ -184,9 +189,12 @@ def draw_lcoe_label(
             label_pos=label_pos or "above",
         )
 
-        label = f"{tech} {year}"
-        if scenario is not None:
-            label += f" ({scenario})"
+        if manual_text:
+            label = manual_text
+        else:
+            label = f"{tech} {year}"
+            if scenario is not None:
+                label += f" ({scenario})"
 
         ax.text(
             x,

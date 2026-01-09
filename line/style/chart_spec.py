@@ -45,7 +45,7 @@ def setup_lcoe_figure(title, subtitle):
     )
 
     ax.set_xlabel(
-        "Demand met/load factor",
+        "Demand met",
         fontproperties=FONT_REGULAR,
         fontsize=small_font,
         color=DARK_GREY,

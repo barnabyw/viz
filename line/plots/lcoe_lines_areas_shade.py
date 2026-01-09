@@ -5,17 +5,17 @@ COUNTRY = "United States"
 
 TITLE_RAW = f"Solar and BESS costs have declined 80% in 10 years"
 
-tag = "1.ga"
+tag = "2"
 
 line_tech_years = [
     #{"tech": "Solar+BESS", "year": 2025, "highlight": True},
     #{"tech": "Solar+BESS", "year": 2020},
     #{"tech": "Solar+BESS", "year": 2015, "highlight": True},
-    {"tech": "Solar+BESS", "year": 2025, "scenario": "Low"},
+    {"tech": "Solar+BESS", "year": 2025, "highlight": True, "scenario": "Low", "label": "Solar+BESS 2025 (Subsidised)"},
     {"tech": "Solar+BESS", "year": 2025, "highlight": True},
-    {"tech": "Solar+BESS", "year": 2024, "scenario": "High"},
+    #{"tech": "Solar+BESS", "year": 2024},
     #{"tech": "Gas", "year": 2015, "highlight": True},
-    {"tech": "Gas", "year": 2025, "highlight": True, "lf": [0.4,0.7]},
+    {"tech": "Gas", "year": 2025, "highlight": True}#, "lf": [0.4,0.7]},
     #{"tech": "Gas", "year": 2015, "highlight": True} #, "label_pos": "above", "label_anchor": "end"}
 ]
 
@@ -128,6 +128,12 @@ def shade_solar_bess_envelope(
         .sort_index()
     )
 
+    print("AX XLIM:", ax.get_xlim())
+    print("PIVOT X RANGE:", pivot.index.min(), pivot.index.max())
+
+    print(pivot.index.dtype)
+    print(pivot[("min", "LCOE")].dtype, pivot[("max", "LCOE")].dtype)
+
     ax.fill_between(
         pivot.index,
         pivot[("min", "LCOE")],
@@ -174,7 +180,6 @@ def shade_fossil_lf_band(
         alpha=alpha,
         zorder=zorder,
     )
-
 
 # -------------------------------------------------
 # Draw chart (components enabled)
@@ -235,12 +240,18 @@ if __name__ == "__main__":
 
     color_lookup = build_color_lookup(line_tech_years)
 
+    key = ("Solar+BESS", 2025)
+    print("color_lookup key exists:", key in color_lookup)
+    print("color value:", color_lookup.get(key))
+
     shade_solar_bess_envelope(
         ax,
         df_lcoe,
-        years=[2024, 2025],
-        scenarios=["Low", "High", "Base"],
+        years=[2025],
+        scenarios=["Low", ""],  # <-- base is blank
         color=color_lookup[("Solar+BESS", 2025)],
+        alpha=0.15,
+        zorder=1000,
     )
 
     shade_fossil_lf_band(
@@ -259,7 +270,7 @@ if __name__ == "__main__":
     name = build_chart_name(COUNTRY, line_tech_years)
 
     output_path = (
-        fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\video charts\{tag}_{name}.png"
+        fr"C:\Users\barna\OneDrive\Documents\Solar_BESS\video charts\raw\{tag}_{name}.png"
     )
 
     fig.savefig(
